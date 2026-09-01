@@ -11,6 +11,106 @@
       {
         "value": "components/construction-twin-3d/legacy-procedural-renderer.js",
         "type": "file"
+      },
+      {
+        "value": "tests",
+        "type": "folder"
+      },
+      {
+        "value": "tools",
+        "type": "folder"
+      },
+      {
+        "value": "components/esp-model",
+        "type": "folder"
+      },
+      {
+        "value": "components/defect-marker",
+        "type": "folder"
+      },
+      {
+        "value": "components/twin-placeholder",
+        "type": "folder"
+      },
+      {
+        "value": "components/health-dashboard",
+        "type": "folder"
+      },
+      {
+        "value": "components/inspection-card",
+        "type": "folder"
+      },
+      {
+        "value": "assets/icon-review-v1/icon-board-preview.png",
+        "type": "file"
+      },
+      {
+        "value": "assets/icon-review-v1/icon-board.svg",
+        "type": "file"
+      },
+      {
+        "value": "assets/icon-review-v1/README.md",
+        "type": "file"
+      },
+      {
+        "value": "images/tab-inspect.png",
+        "type": "file"
+      },
+      {
+        "value": "images/tab-inspect-active.png",
+        "type": "file"
+      },
+      {
+        "value": "images/tab-history.png",
+        "type": "file"
+      },
+      {
+        "value": "images/tab-history-active.png",
+        "type": "file"
+      },
+      {
+        "value": "images/brand/zijin-longking-mark.png",
+        "type": "file"
+      },
+      {
+        "value": "utils/local-excel-export.js",
+        "type": "file"
+      },
+      {
+        "value": "README.md",
+        "type": "file"
+      },
+      {
+        "value": "CLOUD-DEPLOYMENT.md",
+        "type": "file"
+      },
+      {
+        "value": "FEISHU-INTEGRATION.md",
+        "type": "file"
+      },
+      {
+        "value": "CHANGELOG-V3.md",
+        "type": "file"
+      },
+      {
+        "value": "CHANGELOG-V4.1.md",
+        "type": "file"
+      },
+      {
+        "value": "CHANGELOG-V5.1.md",
+        "type": "file"
+      },
+      {
+        "value": "CHANGELOG-V5.2.md",
+        "type": "file"
+      },
+      {
+        "value": "CHANGELOG-V5.3.md",
+        "type": "file"
+      },
+      {
+        "value": "CHANGELOG-V6.0.md",
+        "type": "file"
       }
     ],
     "include": []
