@@ -1,0 +1,145 @@
+/* V6.0 · Zijin Longking enterprise engineering visual system */
+page {
+  --bg: #f4f7fb;
+  --bg-deep: #edf2f8;
+  --panel: #ffffff;
+  --panel-strong: #ffffff;
+  --panel-soft: #f7f9fc;
+  --line: #d6e0eb;
+  --line-soft: #e8eef5;
+  --blue: #0b4aa2;
+  --blue-bright: #1467c9;
+  --cyan: #178bd6;
+  --green: #16845b;
+  --yellow: #d78b00;
+  --red: #d7393f;
+  --purple: #7754b3;
+  --brand: #0b4aa2;
+  --brand-2: #1467c9;
+  --brand-soft: #eef5ff;
+  --success: #16845b;
+  --success-soft: #eef8f3;
+  --warning: #d78b00;
+  --warning-soft: #fff7e7;
+  --danger: #d7393f;
+  --danger-soft: #fff0f1;
+  --text: #172437;
+  --text-2: #5d6b7c;
+  --text-3: #8793a2;
+  --color-primary: #0b4aa2;
+  --color-primary-pressed: #083b82;
+  --color-info: #178bd6;
+  --color-success: #16845b;
+  --color-warning: #d78b00;
+  --color-error: #d7393f;
+  --text-primary: #172437;
+  --text-secondary: #5d6b7c;
+  --text-tertiary: #8793a2;
+  --text-disabled: #a3adba;
+  --border-strong: #bdcad8;
+  --border-default: #d6e0eb;
+  --border-subtle: #e8eef5;
+  --radius-sm: 6rpx;
+  --radius-md: 10rpx;
+  --shadow-sm: 0 8rpx 24rpx rgba(23, 50, 78, .06);
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 28rpx;
+  line-height: 1.55;
+}
+
+/* Compact shared brand header used outside the model-first homepage. */
+.shared-brand-bar{display:flex;min-height:88rpx;align-items:center;margin:0 0 20rpx;padding:10rpx 28rpx;border-bottom:1rpx solid #e8eef5;background:#fff}
+.shared-brand-bar>image{flex:0 0 246rpx;width:246rpx;height:58rpx}.shared-brand-bar>view{flex:1;min-width:0;text-align:right}.shared-brand-bar text,.shared-brand-bar label{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.shared-brand-bar text{font-size:20rpx;font-weight:700}.shared-brand-bar label{margin-top:2rpx;color:#8793a2;font-size:14rpx;letter-spacing:.8rpx}
+@media (max-width:360px){.shared-brand-bar>image{flex-basis:220rpx;width:220rpx}.shared-brand-bar label{display:none}}
+
+view, text, button, input, textarea, picker, image { box-sizing: border-box; }
+/*
+ * 小程序原生 button 在不同基础库中的文字基线并不完全一致。
+ * 统一改用 flex 做几何居中，避免禁用态、粗体或较长中文出现文字偏上、偏下和换行重叠。
+ */
+button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 80rpx;
+  margin: 0;
+  padding: 0 26rpx;
+  overflow: hidden;
+  border-radius: 8rpx;
+  font: inherit;
+  line-height: 1.2;
+  text-align: center;
+  max-width: 100%;
+  white-space: normal;
+  word-break: break-word;
+  vertical-align: middle;
+}
+button > text, button > label { min-width: 0; max-width: 100%; line-height: 1.2; white-space: inherit; word-break: inherit; }
+button[disabled] { opacity: .58; }
+button::after { border: 0; }
+input, textarea { color: var(--text); caret-color: var(--blue); }
+
+.screen { width: 100%; max-width: 750rpx; min-height: 100vh; margin: 0 auto; padding-bottom: calc(44rpx + env(safe-area-inset-bottom)); overflow-x: hidden; background: var(--bg); }
+
+.brand-bar { display: flex; align-items: center; min-height: 108rpx; padding: 16rpx 28rpx; border-bottom: 1rpx solid var(--line-soft); background: #fff; }
+.brand-logo { width: 288rpx; height: 76rpx; object-fit: contain; }
+.brand-meta { flex: 1; min-width: 0; margin-left: 20rpx; text-align: right; }
+.brand-meta text,.brand-meta label { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.brand-meta text { color: var(--text); font-size: 23rpx; font-weight: 700; }
+.brand-meta label { margin-top: 4rpx; color: var(--text-3); font-size: 18rpx; }
+.brand-bar-compact { min-height: 92rpx; padding-top: 10rpx; padding-bottom: 10rpx; }
+.brand-bar-compact .brand-logo { width: 244rpx; height: 64rpx; }
+.brand-bar-compact .brand-meta text { font-size: 22rpx; }
+.brand-bar-compact .brand-meta label { font-size: 16rpx; letter-spacing: .5rpx; }
+
+.context-bar { display: flex; align-items: center; min-height: 88rpx; padding: 0 30rpx; border-bottom: 1rpx solid var(--line-soft); color: var(--text); background: #fff; }
+.context-bar .context-icon { flex: 0 0 auto; margin-right: 14rpx; color: var(--blue); font-size: 32rpx; }
+.context-bar .context-name { flex: 1; min-width: 0; overflow: hidden; font-size: 26rpx; white-space: nowrap; text-overflow: ellipsis; }
+
+.page-hero { position: relative; margin: 28rpx 28rpx 24rpx; padding: 30rpx 24rpx; text-align: left; border: 1rpx solid var(--line); border-left: 8rpx solid var(--blue); border-radius: 8rpx; background: #fff; box-shadow: 0 8rpx 24rpx rgba(23,50,78,.06); }
+.page-hero::before,.page-hero::after { display: none; }
+.page-hero-title { display: block; color: var(--text); font-size: 42rpx; font-weight: 800; letter-spacing: 1rpx; }
+.page-hero-subtitle { display: block; margin-top: 6rpx; color: var(--text-2); font-size: 23rpx; letter-spacing: 1rpx; }
+
+.panel { margin: 0 28rpx 24rpx; padding: 26rpx; border: 1rpx solid var(--line); border-radius: 10rpx; background: #fff; box-shadow: 0 8rpx 24rpx rgba(23,50,78,.05); }
+.section-title { position: relative; display: block; margin: 34rpx 30rpx 20rpx; padding-bottom: 12rpx; color: var(--text); font-size: 32rpx; font-weight: 700; }
+.section-title::after { position: absolute; left: 0; bottom: 0; width: 42rpx; height: 4rpx; background: var(--blue); content: ""; }
+
+.primary-btn { color: #fff; background: linear-gradient(135deg, #0b4aa2, #1467c9); border: 1rpx solid #0b4aa2; box-shadow: 0 6rpx 16rpx rgba(11,74,162,.16); }
+.outline-btn { color: var(--blue); background: #fff; border: 2rpx solid var(--blue); }
+.warning-btn { color: #fff; background: #d78b00; border: 1rpx solid #c47e00; }
+.success-btn { color: #fff; background: #16845b; border: 1rpx solid #126f4c; }
+.danger-btn { color: var(--red); background: #fff; border: 2rpx solid var(--red); }
+.state-pending { color: var(--red) !important; }
+.state-review { color: var(--yellow) !important; }
+.state-closed { color: var(--green) !important; }
+.state-draft { color: var(--blue) !important; }
+.muted { color: var(--text-3); }
+.text-ellipsis { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.text-clamp-2 { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.reminder-anchor { position: relative; }
+.reminder-dot { position: absolute; z-index: 4; width: 16rpx; height: 16rpx; background: var(--red); border: 3rpx solid #fff; border-radius: 50%; box-shadow: 0 2rpx 8rpx rgba(215,57,63,.42); pointer-events: none; }
+
+.sheet-mask { position: fixed; z-index: 90; inset: 0; background: rgba(13,31,52,.58); }
+.bottom-sheet { position: fixed; z-index: 91; left: 0; right: 0; bottom: 0; max-height: 82vh; padding: 20rpx 34rpx calc(34rpx + env(safe-area-inset-bottom)); overflow-y: auto; border: 1rpx solid var(--line); border-radius: 28rpx 28rpx 0 0; background: #fff; box-shadow: 0 -18rpx 54rpx rgba(13,31,52,.18); animation: sheet-in .22s ease-out; }
+.sheet-handle { width: 76rpx; height: 7rpx; margin: 0 auto 22rpx; border-radius: 6rpx; background: #b6c1cd; }
+.sheet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18rpx; min-width: 0; margin-bottom: 24rpx; }
+.sheet-head > text,.sheet-head > view { flex: 1; min-width: 0; }
+.sheet-head text { color: var(--text); font-size: 34rpx; font-weight: 700; line-height: 1.35; }
+.sheet-head button { flex: 0 0 auto; min-height: 60rpx; padding: 0 18rpx; color: var(--blue); background: transparent; border: 1rpx solid var(--blue); }
+.field { min-height: 82rpx; padding: 16rpx 20rpx; border: 1rpx solid var(--line); border-radius: 8rpx; background: #fff; }
+.ux-press { transform: scale(.985); opacity: .86; }
+@keyframes sheet-in { from { transform: translateY(28rpx); opacity: 0; } }
+
+@media (max-width:360px) {
+  button { padding-left: 20rpx; padding-right: 20rpx; }
+  .brand-bar { padding-left: 22rpx; padding-right: 22rpx; }
+  .brand-logo { width: 252rpx; }
+  .page-hero { margin-left: 22rpx; margin-right: 22rpx; }
+  .panel { margin-left: 22rpx; margin-right: 22rpx; padding: 22rpx; }
+  .bottom-sheet { padding-left: 24rpx; padding-right: 24rpx; }
+}

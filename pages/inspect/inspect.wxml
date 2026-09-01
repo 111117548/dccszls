@@ -1,0 +1,129 @@
+<view class="screen ai-screen">
+  <view class="brand-bar brand-bar-compact">
+    <image class="brand-logo" src="/images/brand/zijin-longking-horizontal.png" mode="aspectFit" aria-label="紫金龙净"></image>
+    <view class="brand-meta"><text>工程质量数字化平台</text><label>ENGINEERING QUALITY</label></view>
+  </view>
+  <view class="context-bar">
+    <image class="context-icon-image" src="/assets/icon-review-v1/09-engineering-inspection.svg" mode="aspectFit" aria-label="工程检查"></image><text class="context-name">{{contextProject.name}} · {{contextDevice.name}}</text>
+  </view>
+  <view class="ai-subnav">
+    <view class="{{activeTab === 'photo' ? 'active' : ''}}" bindtap="switchTab" data-tab="photo" role="button"><image src="/assets/icon-review-v1/09-engineering-inspection.svg" mode="aspectFit" aria-label="AI检测"></image><label>AI检测</label></view>
+    <view class="reminder-anchor" bindtap="goRectificationCenter" role="button"><view wx:if="{{attentionCount}}" class="reminder-dot subnav-reminder"></view><image src="/assets/icon-review-v1/07-rapping-system.svg" mode="aspectFit" aria-label="整改跟踪"></image><label>整改跟踪</label></view>
+    <view class="{{activeTab === 'checklist' ? 'active' : ''}}" bindtap="switchTab" data-tab="checklist" role="button"><image src="/assets/icon-review-v1/05-collecting-plate.svg" mode="aspectFit" aria-label="检查清单"></image><label>检查清单</label></view>
+  </view>
+
+  <block wx:if="{{activeTab === 'photo'}}">
+    <block wx:if="{{!tempFilePath && !aiLoading && !aiResult}}">
+      <view class="page-hero ai-hero">
+        <text class="page-hero-title">AI缺陷检查</text>
+        <text class="page-hero-subtitle">视觉识别 · 整改跟踪 · 资料归档</text>
+      </view>
+      <button class="start-ai" bindtap="takePhoto" hover-class="ux-press"><view class="ai-chip"><image src="/assets/icon-review-v1/09-engineering-inspection.svg" mode="aspectFit" aria-label="工程检查"></image></view><label>开始AI检测</label></button>
+      <button class="album-entry" bindtap="chooseFromAlbum">从相册选择现场照片</button>
+      <view class="ai-stats panel">
+        <view class="reminder-anchor"><view wx:if="{{aiStats.pendingConfirm}}" class="reminder-dot stat-reminder"></view><label>待确认</label><text>{{aiStats.pendingConfirm}}</text></view>
+        <view class="reminder-anchor"><view wx:if="{{aiStats.pending}}" class="reminder-dot stat-reminder"></view><label>待整改</label><text class="red">{{aiStats.pending}}</text></view>
+        <view class="reminder-anchor"><view wx:if="{{aiStats.review}}" class="reminder-dot stat-reminder"></view><label>待复验</label><text class="yellow">{{aiStats.review}}</text></view>
+        <view><label>已闭环</label><text>{{aiStats.closed}}</text></view>
+      </view>
+      <text class="section-title">最近任务</text>
+      <view class="recent-empty" wx:if="{{!recentTasks.length}}">暂无AI缺陷任务，点击上方按钮开始检查</view>
+      <button class="recent-task reminder-anchor" wx:for="{{recentTasks}}" wx:key="id" data-id="{{item.id}}" bindtap="openRecentTask" hover-class="ux-press" aria-label="查看{{item.title}}">
+        <view wx:if="{{item.status !== 'closed'}}" class="reminder-dot task-reminder"></view>
+        <view class="task-icon"><image src="/assets/icon-review-v1/09-engineering-inspection.svg" mode="aspectFit" aria-label="检查任务"></image></view>
+        <view class="task-copy">
+          <text class="task-title">{{item.title}}</text>
+          <label class="task-meta">{{item.positionCode || item.deviceName || '整改任务'}}</label>
+        </view>
+        <view class="task-trailing">
+          <text class="task-state state-{{item.status}}">{{item.statusName}}</text>
+          <text class="task-arrow">›</text>
+        </view>
+      </button>
+    </block>
+
+    <block wx:elif="{{!aiResult}}">
+      <view class="context-bar compact"><text class="context-name">AI现场检查 · 拍照取证</text><text class="step-counter">{{aiLoading ? '分析中' : '1/3'}}</text></view>
+      <view class="capture-config panel">
+        <view class="config-row"><label>设备区域</label><picker mode="selector" range="{{deviceNames}}" value="{{deviceIndex}}" bindchange="onDeviceChange"><view>{{deviceNames[deviceIndex]}}　⌄</view></picker></view>
+        <view class="config-row"><label>检查项目</label><picker mode="selector" range="{{inspectionItemNames}}" value="{{inspectionItemIndex}}" bindchange="onInspectionItemChange"><view>{{inspectionItemNames[inspectionItemIndex] || '请选择检查项目'}}　⌄</view></picker></view>
+        <view class="config-row"><label>具体位置</label><input value="{{positionCode}}" bindinput="onPositionInput" placeholder="例如：A室东侧第3跨" /></view>
+        <view class="camera-guide"><text>拍照指导</text><label>{{shootingGuide}}</label><view><text>清晰</text><text>距离适中</text><text>无遮挡</text><text>角度正常</text></view></view>
+      </view>
+      <view class="capture-photo" wx:if="{{tempFilePath}}"><image src="{{tempFilePath}}" mode="aspectFit" bindtap="previewImage"></image><button bindtap="removePhoto">×</button></view>
+      <view class="analysis-state panel" wx:if="{{aiLoading}}">
+        <text class="analysis-icon">AI</text><text>{{aiLoadingText}}</text><label>{{aiPhase === 'quality' ? '正在检测照片质量和识别部位' : '正在逐项对照质量标准'}}</label>
+        <view class="analysis-progress"><view style="width:{{aiProgress}}%"></view></view>
+      </view>
+      <view class="capture-actions" wx:else><button class="outline-btn" bindtap="retakePhoto">重新拍摄</button><button class="primary-btn" bindtap="runAIAnalysis">开始AI分析</button></view>
+    </block>
+
+    <block wx:else>
+      <view class="result-head"><text>识别结果确认</text><label>2/3</label></view>
+      <view class="result-progress"><view></view></view>
+      <view class="result-photo"><canvas type="2d" id="annotateCanvas" class="annotate-canvas" style="width:100%;height:{{canvasHeight}}px;" bindtouchstart="onCanvasTouchStart" bindtouchmove="onCanvasTouchMove" bindtouchend="onCanvasTouchEnd"></canvas></view>
+      <view class="quality-block" wx:if="{{qualityResult}}">
+        <text class="quality-title">照片质量</text>
+        <view class="quality-chips">
+          <view><label>清晰度</label><text>{{qualityResult.clarityName || '合格'}}</text></view>
+          <view><label>距离</label><text>{{qualityResult.distanceName || '合格'}}</text></view>
+          <view><label>遮挡</label><text>{{qualityResult.obstructionName || '无'}}</text></view>
+          <view><label>角度</label><text>{{qualityResult.angleName || '正常'}}</text></view>
+        </view>
+        <view class="quality-warning" wx:if="{{!qualityResult.usable}}">{{qualityResult.qualityMessage}}</view>
+      </view>
+      <view class="defect-confirm panel" wx:for="{{aiResult.defects}}" wx:key="id" bindtap="highlightDefect" data-id="{{item.id}}">
+        <view class="defect-title-row"><text>{{item.name}}</text><label>{{item.severityName || item.severity}}</label></view>
+        <view class="confirm-table">
+          <view><label>缺陷</label><text class="red">{{item.name}}</text></view>
+          <view><label>等级</label><text class="red">{{item.severityName || item.severity}}</text></view>
+          <view><label>AI置信度</label><text class="blue">{{item.confidenceLabel || item.confidencePercent || '--'}}</text></view>
+          <view><label>设备</label><text>{{deviceNames[deviceIndex]}}</text></view>
+          <view><label>部件</label><text>{{areaNames[areaIndex]}}</text></view>
+          <view><label>位置</label><text>{{positionCode || '待补充'}}</text></view>
+        </view>
+        <view class="defect-desc">{{item.description}}</view>
+        <view class="quality-warning" wx:if="{{item.reviewHint}}">{{item.reviewHint}}</view>
+        <view class="defect-tools"><button catchtap="editDefect" data-index="{{index}}">编辑</button><button catchtap="markAsFalsePositive" data-index="{{index}}">误报删除</button></view>
+      </view>
+      <view class="no-defect panel" wx:if="{{!aiResult.defects.length}}">AI未发现明显缺陷，请人工核对后提交检查记录。</view>
+      <button class="add-missed" bindtap="showAddMissedDefect">＋ 补充AI遗漏缺陷</button>
+      <view class="result-note">⚠　AI结果需检查人确认后生效</view>
+      <view class="result-actions"><button class="outline-btn" bindtap="retakePhoto">重新拍摄</button><button class="warning-btn" bindtap="adoptResults" disabled="{{inspectionCommitted || isDemoMode}}">{{inspectionCommitted ? '已生成整改单' : isDemoMode ? '演示结果不可入库' : '确认并生成整改单'}}</button></view>
+      <view class="committed-actions" wx:if="{{rectificationOrderId}}"><button class="primary-btn" bindtap="openRectification">查看整改任务</button><button class="outline-btn" bindtap="openRectificationShare">分享整改单</button></view>
+    </block>
+  </block>
+
+  <block wx:else>
+    <view class="page-hero checklist-hero"><text class="page-hero-title">现场检查清单</text><text class="page-hero-subtitle">按安装专业逐项人工确认</text></view>
+    <scroll-view scroll-x class="check-tabs" enhanced show-scrollbar="{{false}}"><view class="check-tabs-inner"><view wx:for="{{areaList}}" wx:key="key" class="check-tab {{checkArea === item.key ? 'active' : ''}}" bindtap="switchCheckArea" data-key="{{item.key}}" role="button">{{item.name}}</view></view></scroll-view>
+    <view class="check-progress panel"><text>已完成 {{checkPassCount + checkFailCount + checkWarnCount}} / {{checkItemsWithState.length}}</text><label>合格 {{checkPassCount}} · 不合格 {{checkFailCount}} · 待定 {{checkWarnCount}}</label></view>
+    <view class="check-card panel" wx:for="{{checkItemsWithState}}" wx:key="id">
+      <view class="check-title"><text>{{index + 1}}</text><label>{{item.title}}</label></view><view class="check-desc">{{item.desc}}</view><view class="check-standard" wx:if="{{item.standard}}">{{item.standard}}</view>
+      <view class="check-actions">
+        <button class="{{item._state === 'pass' ? 'active pass' : ''}}" bindtap="setCheckState" data-area="{{checkArea}}" data-id="{{item.id}}" data-state="pass">合格</button>
+        <button class="{{item._state === 'fail' ? 'active fail' : ''}}" bindtap="setCheckState" data-area="{{checkArea}}" data-id="{{item.id}}" data-state="fail">不合格</button>
+        <button class="{{item._state === 'warn' ? 'active warn' : ''}}" bindtap="setCheckState" data-area="{{checkArea}}" data-id="{{item.id}}" data-state="warn">待定</button>
+      </view>
+      <input wx:if="{{item._state === 'fail'}}" class="field" placeholder="填写不合格原因" value="{{item._note}}" bindinput="onCheckNoteInput" data-area="{{checkArea}}" data-id="{{item.id}}" />
+    </view>
+    <view class="check-bottom"><button class="outline-btn" bindtap="resetChecklist">重置</button><button class="primary-btn" bindtap="saveChecklist">保存检查结果</button></view>
+  </block>
+
+  <view class="sheet-mask" wx:if="{{showEditDefectModal}}" bindtap="cancelEditDefect"></view>
+  <view class="bottom-sheet" wx:if="{{showEditDefectModal}}">
+    <view class="sheet-handle"></view><view class="sheet-head"><text>编辑缺陷信息</text><button bindtap="cancelEditDefect">×</button></view>
+    <text class="form-label">严重程度</text><picker mode="selector" range="{{['严重','一般','轻微']}}" value="{{editDefectForm.severity === 'major' ? 0 : editDefectForm.severity === 'moderate' ? 1 : 2}}" bindchange="onEditSeverityChange"><view class="field">{{editDefectForm.severity === 'major' ? '严重' : editDefectForm.severity === 'moderate' ? '一般' : '轻微'}}　⌄</view></picker>
+    <text class="form-label">缺陷描述</text><textarea class="field modal-textarea" value="{{editDefectForm.description}}" bindinput="onEditDefectInput" data-field="description" maxlength="500" />
+    <text class="form-label">整改建议</text><textarea class="field modal-textarea" value="{{editDefectForm.suggestion}}" bindinput="onEditDefectInput" data-field="suggestion" maxlength="500" />
+    <button class="primary-btn full-btn" bindtap="saveEditDefect">保存修改</button>
+  </view>
+  <view class="sheet-mask" wx:if="{{showMissedDefectModal}}" bindtap="cancelMissedDefect"></view>
+  <view class="bottom-sheet" wx:if="{{showMissedDefectModal}}">
+    <view class="sheet-handle"></view><view class="sheet-head"><text>补充遗漏缺陷</text><button bindtap="cancelMissedDefect">×</button></view>
+    <text class="form-label">缺陷名称</text><input class="field" value="{{missedDefectForm.name}}" bindinput="onMissedDefectInput" data-field="name" />
+    <text class="form-label">缺陷描述</text><textarea class="field modal-textarea" value="{{missedDefectForm.description}}" bindinput="onMissedDefectInput" data-field="description" />
+    <text class="form-label">整改建议</text><textarea class="field modal-textarea" value="{{missedDefectForm.suggestion}}" bindinput="onMissedDefectInput" data-field="suggestion" />
+    <button class="primary-btn full-btn" bindtap="confirmMissedDefect">添加缺陷</button>
+  </view>
+</view>

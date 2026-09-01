@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "G793三维设备模型",
+  "navigationBarBackgroundColor": "#020d18",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#020d18",
+  "usingComponents": {
+    "construction-twin-3d": "/components/construction-twin-3d/construction-twin-3d",
+    "device-tree": "/components/device-tree/device-tree"
+  }
+}

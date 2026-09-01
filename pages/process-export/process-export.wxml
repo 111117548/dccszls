@@ -1,0 +1,17 @@
+<view class="screen export-screen">
+  <view class="export-hero"><text>导出Excel</text><label>按原始工作簿原位回填</label></view>
+  <view class="original-scope"><text>原表共 9 个工作表</text><label>封面 · 检查内容 · 附表1—附表7</label></view>
+  <view class="export-list">
+    <view wx:for="{{entries}}" wx:key="formId"><text>{{item.sheetName}}</text><label class="{{item.hasRecord ? 'done' : ''}}">{{item.hasRecord ? '✓ 已填写' : '⊖ 未填写'}}</label></view>
+  </view>
+  <button class="export-button warning-btn" bindtap="exportWorkbook" loading="{{exporting}}">一键导出Excel</button>
+  <view class="export-mode-note status-{{cloudExportStatus}}">
+    <text>{{cloudExportStatus === 'ready' ? '原表回填服务已就绪' : cloudExportStatus === 'checking' ? '正在检测原表回填服务...' : '原表回填云函数尚未部署'}}</text>
+    <label>{{cloudExportStatus === 'ready' ? '仅写入原表既有日期、实测值和检查结果单元格' : '请上传并部署 generate-inspection-workbook 云函数'}}</label>
+  </view>
+  <view class="file-result" wx:if="{{fileID || tempFilePath}}">
+    <view class="excel-icon">X</view><view><text>{{fileName}}</text><label>原始版式 · 9个工作表 · 签字区留空</label></view>
+    <view class="file-actions"><button class="outline-btn" bindtap="openExcel">打开Excel</button><button bindtap="exportWorkbook">重新导出</button></view>
+  </view>
+  <text class="print-note">导出打印后由相关人员手工签字</text>
+</view>

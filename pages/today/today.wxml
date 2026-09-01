@@ -1,0 +1,26 @@
+<view class="screen today-screen">
+  <view class="shared-brand-bar"><image src="/images/brand/zijin-longking-horizontal.png" mode="aspectFit" aria-label="紫金龙净"></image><view><text>工程质量数字化平台</text><label>ENGINEERING QUALITY</label></view></view>
+  <view class="today-head"><text>{{dateLabel}}</text><button bindtap="openHistory">历史</button></view>
+  <view class="today-summary"><view><label>需要处理</label><text>{{total}}<text class="today-unit">项</text></text></view><label>仅显示预警与待处理事项</label></view>
+
+  <view wx:if="{{!total}}" class="today-empty"><text>✓</text><label>当前没有需要处理的提醒</label></view>
+
+  <view wx:if="{{logisticsCount}}" class="reminder-group warning-group">
+    <text class="reminder-title">预警</text>
+    <view class="reminder-row" data-type="logistics" bindtap="openItem" hover-class="reminder-row-press">
+      <view class="reminder-icon">!</view><view class="reminder-copy"><text>到货预警　{{logisticsCount}}项</text><label>{{logisticsText}}</label></view><text class="reminder-arrow">›</text>
+    </view>
+  </view>
+
+  <view wx:if="{{aiCount || processCount}}" class="reminder-group todo-group">
+    <text class="reminder-title">待办</text>
+    <view wx:if="{{aiCount}}" class="reminder-row" data-type="ai" bindtap="openItem" hover-class="reminder-row-press"><view class="reminder-icon">AI</view><view class="reminder-copy"><text>AI质检　{{aiCount}}项</text><label>检查草稿等待确认或继续处理</label></view><text class="reminder-arrow">›</text></view>
+    <view wx:if="{{processCount}}" class="reminder-row" data-type="process" bindtap="openItem" hover-class="reminder-row-press"><view class="reminder-icon">✓</view><view class="reminder-copy"><text>检验记录　{{processCount}}项</text><label>检验记录仍在填写中</label></view><text class="reminder-arrow">›</text></view>
+  </view>
+
+  <view wx:if="{{rectificationCount}}" class="reminder-group urge-group">
+    <text class="reminder-title">催办</text>
+    <view class="reminder-row" data-type="rectification" bindtap="openItem" hover-class="reminder-row-press"><view class="reminder-icon">⌁</view><view class="reminder-copy"><text>整改任务　{{rectificationCount}}项</text><label>{{rectificationText}}</label></view><text class="reminder-arrow">›</text></view>
+  </view>
+  <text wx:if="{{total}}" class="today-note">无异常或数量为0的分类自动隐藏</text>
+</view>

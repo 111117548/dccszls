@@ -1,0 +1,7 @@
+<view class="inspection-row" bindtap="onTap" hover-class="inspection-row-press" role="button" aria-label="打开检查记录 {{inspection.name}}">
+  <view class="inspection-index">IN</view>
+  <view class="inspection-main"><text class="inspection-name">{{inspection.name}}</text><text class="inspection-meta">{{inspection.inspector}} · {{inspection.time}}</text></view>
+  <view class="inspection-data"><text>{{inspection.photoCount}}</text><label>照片</label></view>
+  <view class="inspection-data"><text class="defect-value">{{inspection.defectCount}}</text><label>缺陷</label></view>
+  <view class="inspection-state state-{{inspection.status}}">{{inspection.status === 'completed' ? '已完成' : '进行中'}}</view>
+</view>

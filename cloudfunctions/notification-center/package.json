@@ -1,0 +1,9 @@
+{
+  "name": "notification-center",
+  "version": "1.0.0",
+  "description": "ESP发货预警与飞书整改周报微信订阅消息调度",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

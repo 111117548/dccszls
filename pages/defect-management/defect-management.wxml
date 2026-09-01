@@ -1,0 +1,45 @@
+<view class="defect-page">
+  <view class="page-head">
+    <view><text>INSTALLATION DEFECT CLOSED-LOOP</text><label>安装缺陷发现 · 整改 · 复验 · 质量归档</label><label>{{currentUser.roleName || '质量检查员'}} · {{syncStatus.message || '本地台账'}}</label></view>
+    <view class="head-count"><text>{{counts.pending + counts.rectifying + counts.review}}</text><label>活动缺陷</label></view>
+  </view>
+  <scroll-view scroll-x class="filter-scroll">
+    <view class="filters">
+      <button wx:for="{{filters}}" wx:key="key" class="filter {{activeFilter===item.key?'active':''}}" data-key="{{item.key}}" bindtap="switchFilter" hover-class="ux-press"><text>{{item.name}}</text><label>{{counts[item.key] || 0}}</label></button>
+    </view>
+  </scroll-view>
+  <view class="defect-table">
+    <view class="table-head"><text>缺陷编号</text><text>施工空间位置</text><text>安装缺陷</text><text>等级</text><text>AI</text><text>整改状态</text></view>
+    <view class="table-row" wx:for="{{defects}}" wx:key="id" data-id="{{item.id}}" bindtap="openDetail" hover-class="record-press" role="button" aria-label="打开缺陷 {{item.name}}">
+      <text class="mono">{{item.id}}</text>
+      <view><text>{{item.deviceName}} / {{item.systemName}}</text><label>{{item.positionCode}}</label></view>
+      <text>{{item.name}}</text><text class="severity severity-{{item.severity}}">{{item.level}}</text>
+      <text class="confidence">{{item.confidence*100}}%</text><text class="status status-{{item.status}}">{{item.statusName}}</text>
+    </view>
+    <view class="empty" wx:if="{{!defects.length}}">该状态下暂无缺陷</view>
+  </view>
+  <view class="modal-mask" wx:if="{{showDetail}}" bindtap="closeDetail"></view>
+  <view class="detail-modal" wx:if="{{showDetail}}">
+    <view class="modal-head"><text>DEFECT // {{activeDefect.id}}</text><button class="modal-close-btn" bindtap="closeDetail" aria-label="关闭缺陷详情">×</button></view>
+    <view class="defect-title">
+      <view class="alarm-indicator"></view>
+      <view><text>{{activeDefect.name}}</text><label>{{activeDefect.level}} · AI {{activeDefect.confidence*100}}%</label></view>
+      <text class="status status-{{activeDefect.status}}">{{activeDefect.statusName}}</text>
+    </view>
+    <view class="info-grid">
+      <view><label>室别 / 电场</label><text>{{activeDefect.chamber || '综合区域'}} / {{activeDefect.fieldNo ? '第' + activeDefect.fieldNo + '电场' : '公共系统'}}</text></view><view><label>安装系统</label><text>{{activeDefect.systemName}}</text></view>
+      <view><label>施工空间位置</label><text>{{activeDefect.positionCode}}</text></view><view><label>检查标准</label><text>{{activeDefect.standard}}</text></view>
+      <view><label>标准来源</label><text>{{activeDefect.sourceDocument || '项目安装质量检查文件'}}</text></view><view><label>施工阶段</label><text>{{activeDefect.constructionStageName}}</text></view>
+      <view><label>发现时间</label><text>{{activeDefect.createdAt}}</text></view><view><label>整改期限</label><text>{{activeDefect.deadline}}</text></view>
+    </view>
+<view class="description"><label>缺陷描述</label><text>{{activeDefect.description}}</text><label>整改建议</label><text>{{activeDefect.suggestion}}</text></view>
+<view class="open-collab-notice" wx:if="{{activeDefect.openRectificationOrderId}}"><text>OPEN RECTIFICATION</text><label>{{activeDefect.openRectificationOrderId}} · {{activeDefect.openRectificationStatusName}}</label><label>该AI缺陷使用开放协作整改单，不绑定整改责任人。</label></view>
+    <view class="timeline">
+      <view class="done"><view class="timeline-node"></view><text>发现缺陷</text></view>
+      <view class="{{activeDefect.status!=='pending'?'done':''}}"><view class="timeline-node"></view><text>整改执行</text></view>
+      <view class="{{activeDefect.status==='review'||activeDefect.status==='closed'?'done':''}}"><view class="timeline-node"></view><text>申请复验</text></view>
+      <view class="{{activeDefect.status==='closed'?'done':''}}"><view class="timeline-node"></view><text>闭环归档</text></view>
+    </view>
+<view class="actions"><button bindtap="openDevice">查看施工节点</button><button class="primary" bindtap="advanceStatus" disabled="{{activeDefect.status==='closed' && !activeDefect.openRectificationOrderId}}">{{activeDefect.openRectificationOrderId ? '打开协作整改单' : activeDefect.status==='pending'?'接收整改':activeDefect.status==='rectifying'?'提交复验':activeDefect.status==='review'?'复验通过':'已闭环归档'}}</button></view>
+  </view>
+</view>

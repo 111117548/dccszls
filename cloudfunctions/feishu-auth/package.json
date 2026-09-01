@@ -1,0 +1,9 @@
+{
+  "name": "feishu-auth",
+  "version": "1.0.0",
+  "description": "微信手机号与飞书 OAuth 双通道身份绑定",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

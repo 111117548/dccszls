@@ -1,0 +1,11 @@
+<view class="report-page">
+  <view class="page-head"><view><text>CONSTRUCTION QUALITY REPORT CENTER</text><label>{{project.name}} · {{project.stage}} · {{project.layout}} · {{project.drawingNo}}</label></view><text class="date">{{reportDate}}</text></view>
+  <view class="report-grid">
+    <view class="daily-card"><view class="card-code">DAILY / INSTALLATION / AI</view><text class="card-title">《低低温电除尘AI安装质量检查日报》</text><text class="card-sub">按室别、电场、施工构件和标准来源汇总质量见证、缺陷与整改状态</text><view class="daily-stats"><view><text>{{stats.inspectionCount}}</text><label>安装检查</label></view><view><text>{{stats.photoCount}}</text><label>见证照片</label></view><view><text class="warn">{{stats.defectCount}}</text><label>发现缺陷</label></view><view><text class="danger">{{stats.pendingCount}}</text><label>待整改</label></view></view><button class="generate" loading="{{generating}}" bindtap="generateDailyReport">生成安装质量日报</button></view>
+    <view class="outline"><view class="outline-title">REPORT CONTENTS</view><view><text>01</text><label>项目、图号与施工阶段</label></view><view><text>02</text><label>A/B室与1～5电场检查统计</label></view><view><text>03</text><label>质量见证照片与 AI 分析</label></view><view><text>04</text><label>缺陷空间位置与标准来源</label></view><view><text>05</text><label>整改复验与签字确认</label></view></view>
+  </view>
+  <view class="section-title"><text>今日安装缺陷摘要</text><label>INSTALLATION DEFECT SUMMARY</label></view>
+  <view class="summary-table"><view class="table-head"><text>编号</text><text>施工构件</text><text>空间位置</text><text>AI分析结果</text><text>整改状态</text></view><view class="table-row" wx:for="{{defects}}" wx:key="id"><text class="mono">{{item.id}}</text><text>{{item.deviceName}} / {{item.systemName}}</text><text>{{item.positionCode}}</text><text>{{item.name}} · {{item.confidence*100}}%</text><text class="status status-{{item.status}}">{{item.statusName}}</text></view></view>
+  <view class="section-title"><text>已生成报告</text><label>GENERATED REPORTS</label></view>
+  <view class="report-list"><button class="report-file" wx:for="{{reports}}" wx:key="id" data-fileid="{{item.fileID}}" bindtap="openReport" hover-class="ux-press"><text class="file-icon">DOCX</text><view><text>{{item.name}}</text><label>{{item.date}} · {{item.fileName}}</label></view><text>打开 →</text></button><view class="empty" wx:if="{{!reports.length}}">尚未生成项目报告</view></view>
+</view>

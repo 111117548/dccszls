@@ -1,0 +1,140 @@
+<view class="screen twin-home home-v7">
+  <view class="home-v7-brand">
+    <image src="/images/brand/zijin-longking-horizontal.png" mode="aspectFit" aria-label="紫金龙净"></image>
+    <view><text>工程质量数字化平台</text><label>ENGINEERING QUALITY</label></view>
+  </view>
+
+  <view class="home-v7-project">
+    <view class="home-v7-project-name" bindtap="openProjectSheet" hover-class="ux-press" role="button">
+      <text>{{project.shortName || project.name || '选择项目'}}</text><label>⌄</label>
+    </view>
+    <view class="home-v7-device" bindtap="openDeviceSheet" hover-class="ux-press" role="button">
+      <text>{{device.unitNo || device.name || '选择机组'}}</text><label>⌄</label>
+    </view>
+  </view>
+
+  <view class="home-v7-content">
+    <view class="home-v7-model-card">
+      <view class="home-v7-toolbar">
+        <view class="home-v7-tabs">
+          <button class="{{modelView === 'arrival' ? 'active' : ''}}" data-view="arrival" bindtap="setModelView">到货状态</button>
+          <button class="{{modelView === 'installation' ? 'active' : ''}}" data-view="installation" bindtap="setModelView">安装进度</button>
+        </view>
+        <text>{{modelStageName}}</text>
+      </view>
+      <view class="home-v7-model">
+        <construction-twin-3d wx:if="{{modelCanvasVisible}}" light="{{true}}" minimal="{{true}}" project-name="{{project.name}}" device-name="{{project.deviceName}}" stage-index="{{modelStageIndex}}" stage-name="{{modelStageName}}" bind:parttap="onTwinPartTap" />
+        <view wx:else class="model-paused">
+          <view class="model-paused-icon"><image src="/assets/icon-review-v1/01-esp-unit.svg" mode="aspectFit" aria-label="电除尘设备"></image></view>
+          <text>模型预览已暂停</text><label>关闭选择窗口后继续浏览</label>
+        </view>
+      </view>
+      <view class="home-v7-tip">拖动旋转 · 双指缩放 · 点击部件</view>
+    </view>
+
+    <view wx:if="{{!modelPartSelected}}" class="home-v7-info overview" bindtap="openModelOverview" hover-class="home-v7-info-press" role="button">
+      <view class="home-v7-info-head"><text>项目概览</text><label>{{modelView === 'arrival' ? '查看到货总览 ›' : '查看安装进度 ›'}}</label></view>
+      <view class="home-v7-overview">
+        <view><label>到货</label><text>{{arrivalOverallProgress}}%</text></view>
+        <view><label>安装</label><text>{{installationOverallProgress}}%</text></view>
+        <view><label>预警</label><text class="warning">{{logisticsAlertCount}}<text class="unit">项</text></text></view>
+      </view>
+    </view>
+
+    <view wx:else class="home-v7-info selected">
+      <view class="home-v7-selected-copy">
+        <view class="home-v7-info-head"><text>{{selectedPartName}}</text><label class="status {{selectedStatusClass}}">{{selectedStatusText}}</label></view>
+        <view class="home-v7-progress-meta"><text>{{selectedMetricLabel}}</text><label>{{selectedMetricProgress}}%</label></view>
+        <view class="home-v7-progress"><view style="width:{{selectedMetricProgress}}%"></view></view>
+      </view>
+      <button catchtap="openSelectedPart">查看部件详情</button>
+    </view>
+
+    <view class="home-v7-stage-card">
+      <view class="home-v7-stage-head"><text>13个部件进度</text><label>点击切换模型部件</label></view>
+      <scroll-view class="home-v7-stage-scroll" scroll-x enhanced show-scrollbar="{{false}}" scroll-left="{{stageScrollLeft}}">
+        <view class="home-v7-stage-track">
+          <view wx:for="{{constructionStages}}" wx:key="index" class="home-v7-stage-item {{item.index == modelStageIndex ? 'current' : ''}} {{(modelView === 'arrival' ? item.arrivedProgress : item.installedProgress) >= 100 ? 'completed' : ''}}" data-index="{{item.index}}" bindtap="onStageTap" hover-class="home-v7-stage-press">
+            <view class="home-v7-stage-icon"><image src="{{item.iconPath}}" mode="aspectFit" aria-label="{{item.shortName || item.name}}"></image></view>
+            <text>{{item.shortName || item.name}}</text>
+            <label>{{modelView === 'arrival' ? item.arrivedProgress : item.installedProgress}}%</label>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <view class="sheet-mask" wx:if="{{showProjectSheet}}" bindtap="closeProjectSheet"></view>
+  <view class="bottom-sheet project-sheet reference-project-sheet" wx:if="{{showProjectSheet}}">
+    <view class="sheet-handle"></view>
+    <view class="sheet-head">
+      <view><text>选择飞书项目</text><label>全部项目可见，负责人项目可编辑</label></view>
+      <button class="catalog-refresh" bindtap="refreshFeishuProjectCatalog" loading="{{feishuCatalogLoading}}">刷新</button>
+    </view>
+    <view class="project-search-box"><text>⌕</text><input value="{{projectSearchKeyword}}" bindinput="onProjectSearchInput" placeholder="搜索项目名称" /></view>
+    <view class="project-filter-tabs">
+      <view class="{{projectFilter === 'all' ? 'active' : ''}}" data-filter="all" bindtap="setProjectFilter">全部 {{feishuProjects.length}}</view>
+      <view class="{{projectFilter === 'owned' ? 'active' : ''}}" data-filter="owned" bindtap="setProjectFilter">我负责 {{ownedProjectCount}}</view>
+      <view class="{{projectFilter === 'defect' ? 'active' : ''}}" data-filter="defect" bindtap="setProjectFilter">有缺陷 {{defectProjectCount}}</view>
+    </view>
+    <view wx:if="{{feishuCatalogLoading}}" class="catalog-state catalog-loading">
+      <view class="catalog-spinner"></view><text class="catalog-state-title">正在读取飞书项目</text><label>项目列表加载完成后即可选择</label>
+    </view>
+    <view wx:elif="{{feishuCatalogError}}" class="catalog-state error"><text>{{feishuCatalogError}}</text><button bindtap="refreshFeishuProjectCatalog">重新读取</button></view>
+    <scroll-view wx:else class="feishu-project-list reference-project-list" scroll-y enhanced show-scrollbar="{{false}}">
+      <button wx:for="{{displayFeishuProjects}}" wx:key="name" class="project-option {{item.name == project.feishuProjectName ? 'active' : ''}}" data-index="{{item._sourceIndex}}" bindtap="selectFeishuProject">
+        <view class="project-symbol"><image src="/assets/icon-review-v1/01-esp-unit.svg" mode="aspectFit" aria-label="电除尘项目"></image></view>
+        <view class="project-info"><text>{{item.name}}</text><label>{{item.deviceCount}} 个炉号 · {{item.taskCount}} 项缺陷</label></view>
+        <text class="permission-tag {{item.canEdit ? 'editable' : 'readonly'}}">{{item.permissionLabel}}</text>
+        <text class="project-check">{{item.name == project.feishuProjectName ? '●' : '›'}}</text>
+      </button>
+      <view class="project-empty" wx:if="{{!displayFeishuProjects.length}}"><text>没有符合条件的项目</text><label>请更换筛选条件或项目名称</label></view>
+    </scroll-view>
+    <view class="project-sheet-note">我负责的项目可以编辑，其他项目保持仅查看。</view>
+  </view>
+
+  <view class="sheet-mask" wx:if="{{showDeviceSheet}}" bindtap="closeDeviceSheet"></view>
+  <view class="bottom-sheet" wx:if="{{showDeviceSheet}}">
+    <view class="sheet-handle"></view>
+    <view class="sheet-head"><view><text>选择飞书炉号</text><label>{{project.feishuProjectName || project.name}}</label></view></view>
+    <view class="catalog-note compact"><text>炉</text><label>只同步所选项目与炉号对应的缺陷</label></view>
+    <button wx:for="{{devices}}" wx:key="id" class="device-option {{item.id === device.id ? 'active' : ''}}" data-id="{{item.id}}" bindtap="selectDevice">
+      <image class="device-symbol" src="/assets/icon-review-v1/02-electric-field.svg" mode="aspectFit" aria-label="电场设备"></image>
+      <view class="device-info"><text>{{item.feishuDeviceName || item.name}}</text><label>飞书缺陷 {{item.feishuTaskCount || 0}} 项 · 当前阶段 S{{item.currentStage || 1}}</label></view>
+      <text>{{item.id === device.id ? '●' : '›'}}</text>
+    </button>
+  </view>
+
+  <view class="sheet-mask" wx:if="{{showArrivalSheet}}" bindtap="closeArrivalSheet"></view>
+  <view class="bottom-sheet arrival-sheet" wx:if="{{showArrivalSheet}}">
+    <view class="sheet-handle"></view>
+    <view class="sheet-head"><text>设备到货情况</text><button class="close-x" bindtap="closeArrivalSheet">×</button></view>
+    <text class="external-tag">外部系统 · SRM</text>
+    <view class="boundary-box"><text>◈ 数据管理边界</text><label>· 采购及设备到货信息由SRM系统统一管理</label><label>· 本小程序仅提供跳转入口</label></view>
+    <view class="srm-link"><text>↗　SRM设备到货管理</text><label>›</label></view>
+    <button class="srm-button" bindtap="goArrival">前往SRM系统</button>
+    <text class="srm-note">ⓘ　链接未配置时将显示待配置</text>
+  </view>
+
+  <view class="sheet-mask" wx:if="{{showSettings}}" bindtap="closeSettings"></view>
+  <view class="bottom-sheet settings-sheet" wx:if="{{showSettings}}">
+    <view class="sheet-handle"></view>
+    <view class="sheet-head"><text>AI服务配置</text><button bindtap="closeSettings">×</button></view>
+    <view class="service-status service-{{aiServiceStatus}}">
+      <view class="service-dot"></view>
+      <view class="service-copy"><text>{{aiServiceStatusText}}</text><label>API Key仅保存在云函数环境变量中，不会写入小程序</label></view>
+      <button wx:if="{{aiServiceStatus === 'missing' || aiServiceStatus === 'offline'}}" bindtap="enableDemoMode">开启演示</button>
+    </view>
+    <view class="cloud-config-note" wx:if="{{aiServiceStatus === 'missing'}}">
+      <text>真实AI部署：ai-analyze 云函数 → 环境变量</text>
+      <label>ESP_AI_ENDPOINT　ESP_AI_API_KEY　ESP_AI_MODEL</label>
+    </view>
+    <view class="provider-row"><button wx:for="{{['qwen','openai','deepseek','custom']}}" wx:key="*this" class="{{config.provider === item ? 'active' : ''}}" data-provider="{{item}}" bindtap="selectProvider">{{item}}</button></view>
+    <text class="form-label">备用 API Endpoint</text><input class="field" value="{{config.endpoint}}" data-field="endpoint" bindinput="onConfigInput" />
+    <text class="form-label">模型</text><input class="field" value="{{config.model}}" data-field="model" bindinput="onConfigInput" />
+    <button class="setting-line" bindtap="toggleAreaDetect"><text>自动识别设备部位</text><label>{{featureSettings.autoAreaDetect ? 'ON' : 'OFF'}}</label></button>
+    <button class="setting-line" bindtap="toggleQuality"><text>照片质量检测</text><label>{{featureSettings.qualityCheck ? 'ON' : 'OFF'}}</label></button>
+    <button class="setting-line" bindtap="toggleDemo"><text>演示模式</text><label>{{config.demoMode ? 'ON' : 'OFF'}}</label></button>
+    <button class="primary-btn" bindtap="saveSettings">保存系统配置</button>
+  </view>
+</view>

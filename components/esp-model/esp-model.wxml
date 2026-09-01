@@ -1,0 +1,71 @@
+<view class="twin-wrap {{compact ? 'is-compact' : ''}}">
+  <view class="twin-grid"></view>
+  <view class="drawing-tag"><text>G760.0</text><label>双室 · 五电场 · 安装质量正立面</label></view>
+  <view class="view-mode"><text>FRONT ELEVATION</text><label>二维工程孪生</label></view>
+
+  <view class="model-scene elevation-scene">
+    <view class="callout-column callout-left">
+      <view wx:for="{{leftCallouts}}" wx:key="nodeId" class="callout-item {{selectedNodeId === item.nodeId ? 'selected' : ''}}" data-id="{{item.nodeId}}" bindtap="onRegionTap" hover-class="model-region-press" role="button" aria-label="打开构件 {{item.name}}">
+        <text>{{item.name}}</text><view class="callout-line"><label></label></view>
+      </view>
+    </view>
+
+    <view class="esp-elevation">
+      <view class="top-equipment">
+        <view class="hoist-block" data-id="top-hoist" bindtap="onRegionTap" role="button" aria-label="打开顶部起吊构件"><text>顶部起吊</text><view class="hoist-hook"></view></view>
+        <view class="hv-block" data-id="a-hvline" bindtap="onRegionTap" role="button" aria-label="打开高压进线构件"><text>HV</text><label>高压进线</label></view>
+      </view>
+
+      <view class="upper-rail"></view>
+      <view class="chamber-bank">
+        <view class="chamber-elevation" wx:for="{{chambers}}" wx:for-item="chamber" wx:key="code" data-id="{{chamber.shellId}}" bindtap="onRegionTap" role="button" aria-label="打开 {{chamber.name}}">
+          <view class="chamber-title"><text>{{chamber.name}}</text><label>CHAMBER {{chamber.code}}</label></view>
+          <view class="field-bays">
+            <view wx:for="{{chamber.fieldRegions}}" wx:for-item="field" wx:key="id" class="field-bay status-{{field.status}} {{selectedNodeId === field.id ? 'selected' : ''}}" data-id="{{field.id}}" catchtap="onRegionTap" role="button" aria-label="打开 {{field.shortName}}，状态 {{field.status}}">
+              <view class="electrode-lines"><text></text><text></text><text></text></view>
+              <label>{{field.shortName}}</label>
+              <view class="field-state"></view>
+            </view>
+          </view>
+          <view class="hopper-bank">
+            <view class="hopper-elevation {{selectedNodeId === hopper.id ? 'selected' : ''}}" wx:for="{{chamber.hoppers}}" wx:for-item="hopper" wx:key="id" data-id="{{hopper.id}}" catchtap="onRegionTap" role="button" aria-label="打开灰斗 {{chamber.code}}{{hopper.number}}">
+              <view class="hopper-body"></view><view class="hopper-neck"></view><text>{{chamber.code}}{{hopper.number}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="horn horn-inlet" data-id="a-inlet" bindtap="onRegionTap" role="button" aria-label="打开进口喇叭"><text>进口喇叭</text></view>
+      <view class="horn horn-outlet" data-id="a-outlet" bindtap="onRegionTap" role="button" aria-label="打开出口喇叭"><text>出口</text></view>
+      <view class="maintenance-platform"><text>检修平台 / 壳体下横梁</text></view>
+      <view class="steel-frame" data-id="steel-support" bindtap="onRegionTap" role="button" aria-label="打开钢支架">
+        <view class="steel-column" wx:for="{{supportUnits}}" wx:key="*this"><view class="brace-a"></view><view class="brace-b"></view></view>
+      </view>
+      <view class="bearing-bank" data-id="support-bearing" bindtap="onRegionTap" role="button" aria-label="打开支座">
+        <view wx:for="{{supportUnits}}" wx:key="*this"><text></text></view><label>固定 / 活动支座</label>
+      </view>
+    </view>
+
+    <view class="callout-column callout-right">
+      <view wx:for="{{rightCallouts}}" wx:key="nodeId" class="callout-item {{selectedNodeId === item.nodeId ? 'selected' : ''}}" data-id="{{item.nodeId}}" bindtap="onRegionTap" hover-class="model-region-press" role="button" aria-label="打开构件 {{item.name}}">
+        <view class="callout-line"><label></label></view><text>{{item.name}}</text>
+      </view>
+    </view>
+
+    <defect-marker wx:for="{{modelDefects}}" wx:key="id" defect="{{item}}" compact="{{compact}}" bind:markertap="onMarkerTap" />
+  </view>
+
+  <view class="component-layer-panel">
+    <view class="layer-head"><text>DRAWING COMPONENT LAYERS</text><label>总图与检查文件构件 · {{layerContext}}</label></view>
+    <view class="layer-grid">
+      <view wx:for="{{componentLayers}}" wx:key="nodeId" class="layer-item {{selectedNodeId === item.nodeId ? 'selected' : ''}}" data-id="{{item.nodeId}}" bindtap="onRegionTap" hover-class="model-region-press" role="button" aria-label="打开构件层 {{item.name}}">
+        <text class="layer-code">{{item.code}}</text><text class="layer-name">{{item.name}}</text><label>{{item.group}}</label>
+      </view>
+    </view>
+  </view>
+
+  <view class="model-legend">
+    <view><text class="legend-dot normal"></text>合格</view><view><text class="legend-dot warning"></text>一般缺陷</view><view><text class="legend-dot danger"></text>严重缺陷</view>
+    <view class="model-hint">点击本体或引出标注查看质量档案</view>
+  </view>
+</view>

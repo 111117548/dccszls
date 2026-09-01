@@ -1,0 +1,59 @@
+<view class="manage-page">
+  <view class="page-head">
+    <view><text>PROJECT / DEVICE MASTER</text><label>项目和设备主数据</label></view>
+    <button wx:if="{{canCreateProject}}" bindtap="addProject">新增项目</button>
+  </view>
+  <view class="permission-note {{canEdit ? 'editable' : 'readonly'}}">{{canEdit ? '我负责：可维护当前项目和设备' : '仅查看：当前项目由其他项目经理负责'}}</view>
+
+  <view class="project-list">
+    <view class="project-card {{item.id === currentProjectId ? 'active' : ''}}" wx:for="{{projects}}" wx:key="id" data-id="{{item.id}}" bindtap="selectProject">
+      <view class="project-top">
+        <image class="master-icon" src="/assets/icon-review-v1/01-esp-unit.svg" mode="aspectFit" aria-label="电除尘项目"></image>
+        <view class="master-copy"><text>{{item.name}}</text><label>{{item.code}} · {{item.drawingNo}}</label></view>
+        <text class="status status-{{item.status}}">{{item.statusName}}</text>
+      </view>
+      <view class="project-meta"><text>{{item.unit || '未填写机组信息'}}</text><text>{{item.location || '未填写地点'}}</text></view>
+      <button wx:if="{{item.canEdit || canCreateProject}}" catchtap="editProject" data-id="{{item.id}}">编辑项目</button>
+    </view>
+  </view>
+
+  <view class="section-head">
+    <view><text>MANAGED EQUIPMENT</text><label>当前项目设备（{{devices.length}}）</label></view>
+    <button wx:if="{{canEdit}}" bindtap="addDevice">新增设备</button>
+  </view>
+  <view class="device-list">
+    <view class="device-card {{item.id === currentDeviceId ? 'active' : ''}}" wx:for="{{devices}}" wx:key="id" data-id="{{item.id}}" bindtap="selectDevice">
+      <image class="master-icon" src="/assets/icon-review-v1/02-electric-field.svg" mode="aspectFit" aria-label="电场设备"></image>
+      <view class="master-copy"><text>{{item.name}}</text><label>{{item.code}} · {{item.unitNo}}</label></view>
+      <view class="device-actions" wx:if="{{canEdit}}">
+        <button catchtap="editDevice" data-id="{{item.id}}">编辑</button>
+        <button class="danger" catchtap="removeDevice" data-id="{{item.id}}">移除</button>
+      </view>
+    </view>
+    <view class="empty" wx:if="{{!devices.length}}">当前项目还没有配置设备</view>
+  </view>
+
+  <view class="modal-mask" wx:if="{{showProjectForm || showDeviceForm}}"></view>
+  <view class="form-panel" wx:if="{{showProjectForm}}">
+    <view class="form-head"><text>{{projectForm.id ? '编辑项目' : '新增项目'}}</text><button bindtap="closeProjectForm">×</button></view>
+    <label>项目名称 *</label><input value="{{projectForm.name}}" data-field="name" bindinput="onProjectInput" placeholder="例如：彭阳项目"/>
+    <label>项目编号</label><input value="{{projectForm.code}}" data-field="code" bindinput="onProjectInput"/>
+    <label>机组信息</label><input value="{{projectForm.unit}}" data-field="unit" bindinput="onProjectInput" placeholder="例如：2×660MW机组"/>
+    <label>项目地点</label><input value="{{projectForm.location}}" data-field="location" bindinput="onProjectInput"/>
+    <label>总图编号</label><input value="{{projectForm.drawingNo}}" data-field="drawingNo" bindinput="onProjectInput"/>
+    <label>项目负责人</label><input value="{{projectForm.manager}}" data-field="manager" bindinput="onProjectInput"/>
+    <label>项目状态</label>
+    <picker range="{{statusOptions}}" value="{{projectStatusIndex}}" bindchange="onProjectStatusChange"><view class="picker">{{statusOptions[projectStatusIndex]}}⌄</view></picker>
+    <button class="save" bindtap="saveProject">保存项目</button>
+  </view>
+
+  <view class="form-panel" wx:if="{{showDeviceForm}}">
+    <view class="form-head"><text>{{deviceForm.id ? '编辑设备' : '新增设备'}}</text><button bindtap="closeDeviceForm">×</button></view>
+    <label>设备名称 *</label><input value="{{deviceForm.name}}" data-field="name" bindinput="onDeviceInput"/>
+    <label>设备编号</label><input value="{{deviceForm.code}}" data-field="code" bindinput="onDeviceInput"/>
+    <label>所属机组</label><input value="{{deviceForm.unitNo}}" data-field="unitNo" bindinput="onDeviceInput"/>
+    <label>当前施工阶段</label>
+    <picker range="{{deviceStageNames}}" value="{{deviceForm.stageIndex - 1}}" bindchange="onDeviceStageChange"><view class="picker">S{{deviceForm.stageIndex}} · {{deviceStageNames[deviceForm.stageIndex - 1]}}⌄</view></picker>
+    <button class="save" bindtap="saveDevice">保存设备</button>
+  </view>
+</view>

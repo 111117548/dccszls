@@ -1,0 +1,67 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/workbench/workbench",
+    "pages/today/today",
+    "pages/profile/profile",
+    "pages/api-management/api-management",
+    "pages/feishu-account/feishu-account",
+    "pages/inspect/inspect",
+    "pages/batch/batch",
+    "pages/history/history",
+    "pages/device-model/device-model",
+    "pages/construction-progress/construction-progress",
+    "pages/device-detail/device-detail",
+    "pages/defect-management/defect-management",
+    "pages/rectification-share/rectification-share",
+    "pages/rectification-detail/rectification-detail",
+    "pages/report-center/report-center",
+    "pages/project-management/project-management",
+    "pages/reminder-settings/reminder-settings",
+    "pages/process-records/process-records",
+    "pages/process-form/process-form",
+    "pages/process-export/process-export",
+    "pages/arrival-srm/arrival-srm"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTitleText": "紫金龙净工程质量平台",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f4f7fb",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#7b8796",
+    "selectedColor": "#0b4aa2",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "images/tab-home.png",
+        "selectedIconPath": "images/tab-home-active.png"
+      },
+      {
+        "pagePath": "pages/workbench/workbench",
+        "text": "工作台",
+        "iconPath": "images/tab-workbench.png",
+        "selectedIconPath": "images/tab-workbench-active.png"
+      },
+      {
+        "pagePath": "pages/today/today",
+        "text": "今日",
+        "iconPath": "images/tab-today.png",
+        "selectedIconPath": "images/tab-today-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "images/tab-profile.png",
+        "selectedIconPath": "images/tab-profile-active.png"
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2"
+}

@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "defect-marker": "../defect-marker/defect-marker"
+  }
+}

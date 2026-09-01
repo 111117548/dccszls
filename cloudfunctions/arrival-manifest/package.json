@@ -1,0 +1,10 @@
+{
+  "name": "arrival-manifest",
+  "version": "1.0.0",
+  "description": "Parse XLS/XLSX demand and arrival manifests",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3",
+    "xlsx": "^0.18.5"
+  }
+}

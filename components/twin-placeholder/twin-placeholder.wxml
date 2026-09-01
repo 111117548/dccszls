@@ -1,0 +1,21 @@
+<view class="twin-slot {{compact ? 'compact' : ''}}">
+  <view class="slot-grid"></view>
+  <view class="slot-frame">
+    <view class="corner corner-lt"></view>
+    <view class="corner corner-rt"></view>
+    <view class="corner corner-lb"></view>
+    <view class="corner corner-rb"></view>
+    <view class="slot-center">
+      <text class="slot-code">3D MODULE // {{moduleStatus}}</text>
+      <text class="slot-title">施工三维模型预留区</text>
+      <text class="slot-desc">真实GLB / WebGL模型将在独立建模阶段接入</text>
+      <view class="slot-status"><text class="status-dot"></text><text>接口已预留 · 当前不参与业务开发</text></view>
+    </view>
+    <view class="slot-meta">
+      <view><label>项目</label><text>{{projectName || '未选择项目'}}</text></view>
+      <view><label>设备</label><text>{{deviceName || '未选择设备'}}</text></view>
+      <view><label>施工阶段</label><text>S{{stageIndex < 10 ? '0' + stageIndex : stageIndex}} · {{stageName || '待配置'}}</text></view>
+    </view>
+  </view>
+  <view class="slot-footer"><text>{{geometrySummary}}</text><text>后续独立开发</text></view>
+</view>

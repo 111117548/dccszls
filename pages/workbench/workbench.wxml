@@ -1,0 +1,15 @@
+<view class="screen simple-workbench">
+  <view class="shared-brand-bar"><image src="/images/brand/zijin-longking-horizontal.png" mode="aspectFit" aria-label="紫金龙净"></image><view><text>工程质量数字化平台</text><label>ENGINEERING QUALITY</label></view></view>
+  <view class="workbench-context">
+    <text>{{projectName}}</text><label>{{deviceName}}</label>
+  </view>
+  <view class="workbench-heading"><text>全部功能</text><label>项目业务统一从这里进入</label></view>
+  <view class="tool-panel">
+    <view wx:for="{{tools}}" wx:key="action" class="tool-item" data-action="{{item.action}}" bindtap="openTool" hover-class="tool-item-press" role="button">
+      <image src="{{item.icon}}" mode="aspectFit" aria-label="{{item.name}}"></image>
+      <text>{{item.name}}</text>
+      <label>{{item.caption}}</label>
+    </view>
+  </view>
+  <text class="workbench-note">后续新增功能统一在此扩展</text>
+</view>

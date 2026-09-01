@@ -1,0 +1,41 @@
+<view class="screen process-form-screen">
+  <view class="context-bar"><text class="context-icon">▥</text><text class="context-name">{{form.sheetName}} · {{form.title}}</text></view>
+  <view class="form-meta">
+    <view><label>检验日期</label><picker mode="date" value="{{record.inspectionDate}}" bindchange="onDateChange"><text>{{record.inspectionDate}}</text></picker></view>
+    <view><label>检验室</label><picker range="{{chamberOptions}}" value="{{chamberIndex}}" bindchange="onChamberChange"><text>{{record.chamber}}　⌄</text></picker></view>
+    <view><label>检验项目</label><text>{{form.inspectionItem}}</text></view>
+    <view><label>质量标准</label><text>{{form.qualityStandard}}</text></view>
+  </view>
+
+  <view class="diagram panel" wx:if="{{!form.matrix}}">
+    <text>进口　→</text><view class="diagram-line"><view wx:for="{{['a','b','c','d','e']}}" wx:key="*this"><text>╫</text><label>{{item}}</label></view></view>
+    <view class="diagram-line"><view wx:for="{{['f','g','h','i','j']}}" wx:key="*this"><text>╫</text><label>{{item}}</label></view></view>
+  </view>
+
+  <view class="measure-group" wx:for="{{groups}}" wx:key="id">
+    <view class="group-title"><text>{{item.name}}</text><label>实测数据（{{item.unit}}）</label></view>
+    <view class="metric-table">
+      <view wx:for="{{item.items}}" wx:for-item="metric" wx:key="code">
+        <text>测点 {{metric.code}}</text>
+        <input type="digit" value="{{metric.value}}" data-group="{{item.id}}" data-code="{{metric.code}}" bindinput="onMetricInput" placeholder="请输入" />
+        <label class="{{metric.value ? 'filled' : ''}}">{{metric.value ? '已录入' : '-'}}</label>
+      </view>
+    </view>
+  </view>
+
+  <view class="matrix-panel" wx:if="{{form.matrix}}">
+    <picker range="{{matrixFieldNames}}" value="{{matrixFieldIndex}}" bindchange="onMatrixFieldChange"><view class="matrix-picker">{{matrixFieldNames[matrixFieldIndex]}}　⌄</view></picker>
+    <scroll-view scroll-x><view class="matrix-table">
+      <view class="matrix-row head"><text>通道</text><text wx:for="{{form.matrix.columns}}" wx:key="id">{{item.name}}</text></view>
+      <view class="matrix-row" wx:for="{{matrixRows}}" wx:key="channel" wx:for-index="rowIndex"><text>{{item.channel}}</text><input wx:for="{{item.cells}}" wx:for-item="cell" wx:key="id" value="{{cell.value}}" data-row="{{rowIndex}}" data-column="{{cell.id}}" bindinput="onMatrixInput" maxlength="1" placeholder="√/×" /></view>
+    </view></scroll-view>
+  </view>
+
+  <view class="result-panel panel">
+    <text>检查结果</text><picker range="{{resultOptions}}" value="{{resultIndex}}" bindchange="onResultChange"><view class="result-picker">{{resultOptions[resultIndex]}}　⌄</view></picker>
+    <text>备注</text><textarea value="{{record.remarks}}" data-field="remarks" bindinput="onMetaInput" placeholder="选填" maxlength="500" />
+  </view>
+  <button class="save-form primary-btn" bindtap="saveDraft">保存</button>
+  <button class="complete-form success-btn" bindtap="completeRecord">完成记录</button>
+  <button class="original-link" bindtap="showOriginalTemplate">查看原表样式</button>
+</view>

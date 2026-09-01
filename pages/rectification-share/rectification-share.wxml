@@ -1,0 +1,65 @@
+<view class="share-screen">
+  <view class="loading-state" wx:if="{{loading}}">正在准备分享页面…</view>
+  <view class="loading-state error" wx:elif="{{errorMessage}}">{{errorMessage}}</view>
+
+  <block wx:elif="{{order}}">
+    <view class="share-hero">
+      <text class="eyebrow">RECTIFICATION COLLABORATION</text>
+      <text class="page-title">分享整改任务</text>
+      <text class="page-subtitle">转发后，任何收到任务的人都可以提交整改证据，无需绑定项目身份</text>
+    </view>
+
+    <view class="certification-notice">
+      <view class="notice-icon">!</view>
+      <view class="notice-copy">
+        <text>分享页面已经就绪</text>
+        <label>当前未认证时可预览完整流程；完成小程序认证后，“转发给微信好友”即可直接使用。</label>
+      </view>
+    </view>
+
+    <view class="cloud-state {{cloudReady ? 'ready' : ''}}" bindtap="retryCloudShare">
+      <text>{{cloudReady ? '✓' : '↻'}}</text>
+      <label>{{cloudStatus}}</label>
+      <text class="cloud-state-hint" wx:if="{{!cloudReady}}">点击重试</text>
+    </view>
+
+    <view class="task-card">
+      <view class="task-head">
+        <view><text class="task-label">整改任务</text><text class="task-id">{{order.id}}</text></view>
+        <label class="status status-{{order.status}}">{{order.statusName}}</label>
+      </view>
+      <view class="task-main">
+        <view class="task-copy">
+          <text class="defect-name">{{order.defectName}}</text>
+          <label class="severity">{{order.severityName}}</label>
+          <view><text>设备位置</text><label>{{order.positionLabel}}</label></view>
+          <view><text>整改期限</text><label class="deadline">{{order.deadline || '待确定'}}</label></view>
+        </view>
+        <image wx:if="{{order.sourceImageUrl}}" src="{{order.sourceImageUrl}}" mode="aspectFill" bindtap="previewSource"></image>
+      </view>
+    </view>
+
+    <view class="recipient-panel">
+      <view class="section-head"><text>被分享人操作流程</text><label>OPEN LINK</label></view>
+      <view class="workflow">
+        <view><text>1</text><label>收到任务</label></view><view class="flow-line"></view>
+        <view><text>2</text><label>填写说明</label></view><view class="flow-line"></view>
+        <view><text>3</text><label>上传照片</label></view><view class="flow-line"></view>
+        <view><text>4</text><label>提交复验</label></view>
+      </view>
+      <view class="requirements">
+        <view><text>✓</text><label>无需注册或绑定项目角色</label></view>
+        <view><text>✓</text><label>填写整改情况文字说明</label></view>
+        <view><text>✓</text><label>上传1–9张整改后照片</label></view>
+        <view><text>✓</text><label>提交后进入待复验，由创建人确认闭环</label></view>
+      </view>
+    </view>
+
+    <button class="share-primary" open-type="share" disabled="{{!cloudReady}}">{{cloudReady ? '转发给微信好友' : '等待云端协作就绪'}}</button>
+    <button class="preview-button" bindtap="previewRecipient">预览被分享人整改页面</button>
+    <button class="copy-button" bindtap="copyTaskInfo">复制整改任务信息</button>
+    <button class="task-link" bindtap="openTask">返回查看整改任务</button>
+
+    <view class="security-note">分享链接包含一次整改任务的开放令牌，仅用于本任务提交；复验与最终闭环仍由整改单创建人完成。</view>
+  </block>
+</view>

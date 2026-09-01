@@ -1,0 +1,7 @@
+{
+  "name": "feishu-rectification",
+  "version": "1.0.0",
+  "description": "飞书多维表格整改项同步与闭环附件回传",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "~2.6.3" }
+}

@@ -1,0 +1,45 @@
+<view class="screen records-screen">
+  <view class="records-context-card">
+    <view class="records-context-icon"><image src="/assets/icon-review-v1/01-esp-unit.svg" mode="aspectFit" aria-label="电除尘项目"></image></view>
+    <view class="records-context-copy"><text>{{device.name}}</text><label>{{stage.name || '施工检验'}} · 7 张原始附表</label></view>
+    <text class="records-context-arrow">›</text>
+  </view>
+
+  <view class="records-progress-card">
+    <view class="records-progress-title"><text>本阶段完成</text><view><text>{{completedCount}}</text><label>/ {{forms.length}}</label></view></view>
+    <view class="records-progress-bar"><view style="width:{{completionRate}}%"></view></view>
+    <view class="records-stats">
+      <view><label>待填写</label><text>{{pendingCount}}</text></view>
+      <view><label>已完成</label><text class="success">{{completedCount}}</text></view>
+      <view><label>异常</label><text class="danger">{{issueCount}}</text></view>
+    </view>
+  </view>
+
+  <view class="records-toolbar">
+    <view class="records-filters">
+      <view class="{{formFilter === 'all' ? 'active' : ''}}" data-filter="all" bindtap="setFormFilter">全部</view>
+      <view class="{{formFilter === 'pending' ? 'active' : ''}}" data-filter="pending" bindtap="setFormFilter">待填写</view>
+      <view class="{{formFilter === 'issue' ? 'active' : ''}}" data-filter="issue" bindtap="setFormFilter">有异常</view>
+    </view>
+    <text bindtap="goExport">导出 Excel</text>
+  </view>
+
+  <view class="records-list">
+    <view class="record-row reminder-anchor" wx:for="{{displayForms}}" wx:key="id" data-formid="{{item.id}}" data-recordid="{{item.latestRecordId}}" bindtap="openFormRow" hover-class="record-row-active">
+      <view wx:if="{{item.latestStatus === 'draft'}}" class="reminder-dot record-reminder"></view>
+      <view class="record-icon"><image src="{{item.icon}}" mode="aspectFit" aria-label="{{item.listTitle}}"></image></view>
+      <view class="record-copy">
+        <text>{{item.listTitle}}记录</text>
+        <label>已填写 {{item.completedItems}} / {{item.totalItems}} 项 · {{item.sheetName}}</label>
+      </view>
+      <view class="record-action">
+        <text class="record-state state-{{item.displayState}}">{{item.latestStatusName}}</text>
+        <text class="record-arrow">›</text>
+      </view>
+    </view>
+    <view class="records-empty" wx:if="{{!displayForms.length}}"><text>当前没有符合条件的记录</text><label>可切换其他状态查看</label></view>
+  </view>
+
+  <button class="records-primary" bindtap="continueForm">继续填写</button>
+</view>
+

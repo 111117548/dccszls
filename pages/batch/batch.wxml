@@ -1,0 +1,230 @@
+<!-- pages/batch/batch.wxml -->
+<view class="page-container">
+
+  <!-- Header -->
+  <view class="batch-header">
+    <view class="batch-title">批量巡检</view>
+    <view class="batch-subtitle">上传多张照片，批量AI缺陷检测</view>
+  </view>
+
+  <view class="demo-notice" wx:if="{{isDemoMode}}">
+    <view class="demo-notice-tag">DEMO</view>
+    <view class="demo-notice-content">
+      <view>当前为批量流程演示</view>
+      <text>可体验分析与人工复核，结果不会进入正式质量台账</text>
+    </view>
+  </view>
+
+  <!-- Photo Upload -->
+  <view class="upload-section">
+    <button class="upload-area" bindtap="choosePhotos" wx:if="{{photos.length < maxPhotos}}" hover-class="ux-press">
+      <view class="upload-icon">📷</view>
+      <text class="upload-text">点击上传照片（{{photos.length}}/{{maxPhotos}}）</text>
+      <text class="upload-hint">支持多张选择，每张将逐一AI分析</text>
+    </button>
+  </view>
+
+  <!-- Photo Grid -->
+  <view class="photo-grid" wx:if="{{photos.length > 0}}">
+    <view class="photo-thumb" wx:for="{{photos}}" wx:for-index="photoIndex" wx:key="id">
+      <image src="{{item.path}}" mode="aspectFill" alt="待批量检查的现场照片 {{photoIndex + 1}}"></image>
+      <button class="photo-remove" catchtap="removePhoto" data-index="{{photoIndex}}" wx:if="{{!analyzing && !analysisDone}}" aria-label="删除照片 {{photoIndex + 1}}">✕</button>
+      <view class="photo-status {{item.status}}">
+        <text wx:if="{{item.status === 'pending'}}">待分析</text>
+        <text wx:if="{{item.status === 'analyzing'}}">分析中...</text>
+        <text wx:if="{{item.status === 'done'}}">{{item.defectCount}}个缺陷</text>
+        <text wx:if="{{item.status === 'error'}}">失败</text>
+      </view>
+    </view>
+    <!-- Add more button -->
+    <button class="photo-thumb photo-add-more" bindtap="choosePhotos" wx:if="{{photos.length < maxPhotos}}" hover-class="ux-press" aria-label="继续添加现场照片">
+      <view style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:48rpx;">+</view>
+    </button>
+  </view>
+
+  <!-- Start Analysis Button -->
+  <view class="action-section" wx:if="{{photos.length > 0 && !analyzing && !analysisDone}}">
+    <button class="btn btn-primary btn-block" bindtap="startBatchAnalysis">
+      {{isDemoMode ? '体验批量分析' : '开始批量分析'}}（{{photos.length}}张照片）
+    </button>
+  </view>
+
+  <!-- Progress -->
+  <view class="progress-section" wx:if="{{analyzing}}">
+    <view class="progress-text">正在分析第 {{currentPhotoIndex + 1}}/{{photos.length}} 张照片...</view>
+    <view class="progress-bar">
+      <view class="progress-fill" style="width: {{progressPercent}}%;"></view>
+    </view>
+  </view>
+
+  <!-- Results -->
+  <view wx:if="{{analysisDone}}">
+
+    <view class="batch-review-state {{batchCommitted ? 'committed' : 'draft'}}">
+      <text>{{batchCommitted ? 'CONFIRMED RECORD' : (isDemoMode ? 'DEMO REVIEW' : 'AI REVIEW DRAFT')}}</text>
+      <view>{{batchCommitted ? '人工复核完成，批量记录已提交' : (isDemoMode ? '演示结果仅用于体验，不写入正式台账' : '批量分析结果为草稿，请逐条复核后提交')}}</view>
+    </view>
+
+    <!-- Overall Stats -->
+    <view class="overall-stats">
+      <view class="overall-stat-item">
+        <view class="overall-stat-num">{{totalPhotos}}</view>
+        <view class="overall-stat-label">照片数</view>
+      </view>
+      <view class="overall-stat-item">
+        <view class="overall-stat-num" style="color:#FA5151;">{{totalDefects}}</view>
+        <view class="overall-stat-label">缺陷总数</view>
+      </view>
+      <view class="overall-stat-item">
+        <view class="overall-stat-num" style="color:#FA5151;">{{totalMajor}}</view>
+        <view class="overall-stat-label">严重</view>
+      </view>
+      <view class="overall-stat-item">
+        <view class="overall-stat-num" style="color:#FFC300;">{{totalModerate}}</view>
+        <view class="overall-stat-label">一般</view>
+      </view>
+      <view class="overall-stat-item">
+        <view class="overall-stat-num" style="color:#10AEFF;">{{totalMinor}}</view>
+        <view class="overall-stat-label">轻微</view>
+      </view>
+    </view>
+
+    <!-- Per-Photo Results -->
+    <view class="results-section">
+      <view class="results-title">逐张检查结果</view>
+
+      <block wx:for="{{photos}}" wx:for-item="photo" wx:for-index="photoIndex" wx:key="id">
+        <view class="result-card" wx:if="{{photo.status === 'done'}}">
+          <image class="result-photo" src="{{photo.path}}" mode="aspectFill" bindtap="previewPhoto" data-index="{{photoIndex}}" alt="批量检查结果照片 {{photoIndex + 1}}"></image>
+          <view class="result-body">
+            <view class="result-photo-label">照片 {{photoIndex + 1}}
+              <text style="color:#64748b;font-size:22rpx;margin-left:12rpx;">{{photo.areaName || ''}}</text>
+            </view>
+
+            <!-- Summary chips -->
+            <view class="result-summary" wx:if="{{photo.defects && photo.defects.length > 0}}">
+              <view class="result-stat stat-major" wx:if="{{photo.majorCount > 0}}">严重 {{photo.majorCount}}</view>
+              <view class="result-stat stat-moderate" wx:if="{{photo.moderateCount > 0}}">一般 {{photo.moderateCount}}</view>
+              <view class="result-stat stat-minor" wx:if="{{photo.minorCount > 0}}">轻微 {{photo.minorCount}}</view>
+            </view>
+
+            <!-- Defects -->
+            <view wx:if="{{photo.defects && photo.defects.length > 0}}">
+              <view class="defect-item" wx:for="{{photo.defects}}" wx:for-item="defect" wx:for-index="defectIndex" wx:key="id">
+                <view class="defect-header">
+                  <view class="defect-num {{defect.severity}}">{{defect.id}}</view>
+                  <view class="defect-name">{{defect.name}}</view>
+                </view>
+                <view class="defect-desc">{{defect.description}}</view>
+                <view class="defect-actions" wx:if="{{!batchCommitted}}">
+                  <button class="defect-action-btn {{defect.confirmed ? 'confirmed' : ''}}"
+                    catchtap="confirmDefect" data-photo-index="{{photoIndex}}" data-defect-index="{{defectIndex}}">
+                    {{defect.confirmed ? '✅ 已确认' : '✓ 确认'}}
+                  </button>
+                  <button class="defect-action-btn" catchtap="editDefect" data-photo-index="{{photoIndex}}" data-defect-index="{{defectIndex}}">
+                    ✏️ 编辑
+                  </button>
+                  <button class="defect-action-btn" catchtap="removeDefect" data-photo-index="{{photoIndex}}" data-defect-index="{{defectIndex}}">
+                    🗑️ 删除
+                  </button>
+                </view>
+              </view>
+            </view>
+
+            <view class="no-defects" wx:else>未发现缺陷</view>
+
+            <!-- Add defect button -->
+            <view style="margin-top:16rpx;" wx:if="{{!batchCommitted}}">
+              <button class="btn btn-outline btn-sm" catchtap="addDefect" data-photo-index="{{photoIndex}}">
+                ➕ 添加缺陷
+              </button>
+            </view>
+          </view>
+        </view>
+      </block>
+
+      <!-- Error photos -->
+      <block wx:for="{{photos}}" wx:for-item="photo" wx:for-index="photoIndex" wx:key="id">
+        <view class="result-card" wx:if="{{photo.status === 'error'}}">
+          <image class="result-photo" src="{{photo.path}}" mode="aspectFill" alt="批量分析失败的照片 {{photoIndex + 1}}"></image>
+          <view class="result-body">
+            <view class="result-photo-label" style="color:#FA5151;">照片 {{photoIndex + 1}} - 分析失败</view>
+            <view class="no-defects">{{photo.errorMsg || '未知错误'}}</view>
+            <view style="margin-top:16rpx;">
+              <button class="btn btn-outline btn-sm" catchtap="retryPhoto" data-index="{{photoIndex}}">🔄 重试</button>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <!-- Export Button -->
+    <view class="export-section">
+      <button class="btn btn-outline btn-block" bindtap="confirmAllDefects" wx:if="{{!batchCommitted && totalDefects > 0}}">全部标记为已复核</button>
+      <button class="btn btn-primary btn-block" bindtap="commitBatchResults" disabled="{{batchCommitted}}" style="margin-top:16rpx;">{{batchCommitted ? '批量巡检已提交' : (isDemoMode ? '演示结果不可入库' : '确认并提交批量记录')}}</button>
+      <button class="btn btn-success btn-block" bindtap="exportReport" wx:if="{{batchCommitted && totalDefects > 0}}" style="margin-top:16rpx;">
+        📄 导出整改清单（Word）
+      </button>
+      <button class="btn btn-outline btn-block" bindtap="resetBatch" style="margin-top:16rpx;">
+        🔄 重新选择照片
+      </button>
+    </view>
+  </view>
+
+  <!-- Edit Defect Modal -->
+  <view class="modal-mask" wx:if="{{showEditModal}}" bindtap="closeEditModal"></view>
+  <view class="modal-content" wx:if="{{showEditModal}}">
+    <view class="modal-title">编辑缺陷</view>
+    <view class="edit-label">严重程度</view>
+    <picker mode="selector" range="{{severityOptions}}" value="{{editForm.severityIdx}}" bindchange="onEditSeverityChange">
+      <view class="edit-picker">
+        <text>{{severityOptions[editForm.severityIdx]}}</text>
+        <text style="margin-left:auto;">▼</text>
+      </view>
+    </picker>
+    <view class="edit-label">缺陷名称</view>
+    <input class="edit-input" value="{{editForm.name}}" bindinput="onEditInput" data-field="name" />
+    <view class="edit-label">缺陷描述</view>
+    <textarea class="edit-textarea" value="{{editForm.description}}" bindinput="onEditInput" data-field="description" auto-height maxlength="500" />
+    <view class="edit-label">整改建议</view>
+    <textarea class="edit-textarea" value="{{editForm.suggestion}}" bindinput="onEditInput" data-field="suggestion" auto-height maxlength="500" />
+    <view class="row" style="margin-top:32rpx;">
+      <view class="col">
+        <button class="btn btn-outline btn-sm" catchtap="closeEditModal">取消</button>
+      </view>
+      <view class="col">
+        <button class="btn btn-primary btn-sm" catchtap="saveEditDefect">保存</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- Add Defect Modal -->
+  <view class="modal-mask" wx:if="{{showAddModal}}" bindtap="closeAddModal"></view>
+  <view class="modal-content" wx:if="{{showAddModal}}">
+    <view class="modal-title">添加缺陷</view>
+    <view class="edit-label">缺陷名称 *</view>
+    <input class="edit-input" placeholder="请输入缺陷名称" value="{{addForm.name}}" bindinput="onAddInput" data-field="name" />
+    <view class="edit-label">严重程度</view>
+    <picker mode="selector" range="{{severityOptions}}" value="{{addForm.severityIdx}}" bindchange="onAddSeverityChange">
+      <view class="edit-picker">
+        <text>{{severityOptions[addForm.severityIdx]}}</text>
+        <text style="margin-left:auto;">▼</text>
+      </view>
+    </picker>
+    <view class="edit-label">缺陷描述</view>
+    <textarea class="edit-textarea" placeholder="请描述缺陷" value="{{addForm.description}}" bindinput="onAddInput" data-field="description" auto-height maxlength="500" />
+    <view class="edit-label">整改建议</view>
+    <textarea class="edit-textarea" placeholder="请输入整改建议" value="{{addForm.suggestion}}" bindinput="onAddInput" data-field="suggestion" auto-height maxlength="500" />
+    <view class="row" style="margin-top:32rpx;">
+      <view class="col">
+        <button class="btn btn-outline btn-sm" catchtap="closeAddModal">取消</button>
+      </view>
+      <view class="col">
+        <button class="btn btn-primary btn-sm" catchtap="saveAddDefect">添加</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- Bottom spacer -->
+  <view style="height:60rpx;"></view>
+</view>

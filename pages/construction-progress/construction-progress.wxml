@@ -1,0 +1,74 @@
+<view class="screen warning-screen">
+  <view class="context-bar"><text class="context-icon">▥</text><text class="context-name">{{projectName}} · {{deviceName}}</text></view>
+
+  <view class="stage-card">
+    <view class="card-head">
+      <view><text class="stage-title">{{stage.name}}</text><text class="stage-source">数据来源：{{summarySource}}</text></view>
+      <text class="mode-chip {{progressKind === '预测' ? 'forecast' : ''}}">{{progressKind}}进度</text>
+    </view>
+
+    <view class="core-metrics">
+      <view><text>需求</text><label>{{demandValue}}</label><text class="metric-unit">{{summaryUnit}}</text></view>
+      <view><text>到货</text><label>{{arrivalValue}}</label><text class="metric-unit">{{summaryUnit}}</text></view>
+      <view><text>安装</text><label>{{displayProgress}}</label><text class="metric-unit">%</text></view>
+    </view>
+
+    <view class="main-progress"><view style="width:{{displayProgress}}%"></view></view>
+    <view class="progress-caption">
+      <text wx:if="{{mode === 'forecast'}}">实际 {{actualProgress}}% · 按每日 {{projection.dailyPercent}}% 推演</text>
+      <text wx:else>约完成 {{installedValue}}{{summaryUnit}}</text>
+      <label>{{displayProgress}}%</label>
+    </view>
+
+    <view class="warning-strip warning-{{warning.level}}">
+      <view class="warning-mark">{{warning.level === 'normal' ? '✓' : '!'}}</view>
+      <view><text>{{warning.title}}</text><label>{{warning.message}}</label></view>
+      <button wx:if="{{activeRatioAlert}}" loading="{{handlingAlert}}" bindtap="handleAlert">已安排</button>
+    </view>
+
+    <view class="summary-actions">
+      <text bindtap="toggleCorrection">{{correctionOpen ? '收起校正' : '调整汇总数量'}}</text>
+      <text bindtap="openArrivalLedger">查看到货清单 ›</text>
+    </view>
+
+    <view wx:if="{{correctionOpen}}" class="correction-box">
+      <view class="compact-input"><text>需求数量</text><input type="digit" value="{{correctionForm.demand}}" data-field="demand" bindinput="onCorrectionInput" /></view>
+      <view class="compact-input"><text>到货数量</text><input type="digit" value="{{correctionForm.arrival}}" data-field="arrival" bindinput="onCorrectionInput" /></view>
+      <view class="correction-buttons"><button class="text-button" wx:if="{{metric.summaryOverrideEnabled}}" bindtap="restoreManifest">恢复清单</button><button class="outline-button" bindtap="saveCorrection">保存校正</button></view>
+    </view>
+  </view>
+
+  <view class="manage-card">
+    <view class="manage-head"><view><text>进度管理</text><label>只维护当前施工部件</label></view><text wx:if="{{!isCurrentStage}}" class="not-current">非当前部件</text></view>
+
+    <view wx:if="{{!isCurrentStage}}" class="stage-lock">
+      <text>当前项目正在施工其他部件，本页面保持只读。</text>
+      <button wx:if="{{canManage}}" bindtap="setAsCurrentStage">设为当前部件</button>
+    </view>
+
+    <block wx:else>
+      <view class="mode-tabs">
+        <view class="{{mode === 'actual' ? 'active' : ''}}" data-mode="actual" bindtap="switchMode">实际填报</view>
+        <view class="{{mode === 'forecast' ? 'active' : ''}}" data-mode="forecast" bindtap="switchMode">速度推演</view>
+      </view>
+
+      <view wx:if="{{mode === 'actual'}}" class="mode-form actual-form">
+        <view class="form-line"><view><text>当前累计安装进度</text><label>填写现场确认后的实际百分比</label></view><view class="percent-input"><input type="digit" value="{{form.actualProgress}}" data-field="actualProgress" bindinput="onFormInput" /><text>%</text></view></view>
+        <view class="form-tip">实际填报后会重新校准速度推演的起点。</view>
+      </view>
+
+      <view wx:else class="mode-form forecast-form">
+        <view class="form-line"><view><text>每日预计进度</text><label>系统按日期自动滚动计算</label></view><view class="percent-input"><input type="digit" value="{{form.dailyPercent}}" data-field="dailyPercent" bindinput="onFormInput" /><text>%</text></view></view>
+        <view class="form-line"><view><text>提前准备值</text><label>达到时提示准备下一部件</label></view><view class="percent-input"><input type="digit" value="{{form.preparePercent}}" data-field="preparePercent" bindinput="onFormInput" /><text>%</text></view></view>
+        <view class="form-line"><view><text>发货预警值</text><label>达到时正式提醒安排发货</label></view><view class="percent-input"><input type="digit" value="{{form.dispatchPercent}}" data-field="dispatchPercent" bindinput="onFormInput" /><text>%</text></view></view>
+        <view class="forecast-result"><text>预计达到 {{form.preparePercent}}%</text><label>{{projection.prepareDate || '保存后计算'}}</label><text>预计触发 {{form.dispatchPercent}}%</text><label>{{projection.dispatchDate || '保存后计算'}}</label></view>
+        <view class="form-tip">预测只用于展示与预警，不会写成实际完成量。</view>
+      </view>
+
+      <button class="save-button" loading="{{saving}}" disabled="{{saving || !canManage}}" bindtap="saveProgressMode">{{mode === 'actual' ? '保存实际进度' : '保存推演设置'}}</button>
+      <text wx:if="{{!canManage}}" class="permission-tip">当前项目仅可查看，项目负责人可以填写。</text>
+    </block>
+  </view>
+
+  <view class="safe-bottom"></view>
+</view>

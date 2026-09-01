@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "工程施工数字孪生",
+  "navigationBarBackgroundColor": "#ffffff",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#f4f7fb",
+  "usingComponents": {
+    "construction-twin-3d": "/components/construction-twin-3d/construction-twin-3d",
+    "health-dashboard": "/components/health-dashboard/health-dashboard",
+    "inspection-card": "/components/inspection-card/inspection-card"
+  }
+}

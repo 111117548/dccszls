@@ -1,0 +1,10 @@
+{
+  "name": "ai-analyze",
+  "version": "2.2.0",
+  "description": "AI视觉分析云函数 - 中转调用通义千问VL等API",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3",
+    "axios": "^1.6.0"
+  }
+}

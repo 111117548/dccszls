@@ -1,0 +1,18 @@
+.tree { border-top:1rpx solid rgba(76,174,207,.22); }
+.tree-row { position:relative; display:flex; align-items:center; min-height:74rpx; padding-right:18rpx; border-bottom:1rpx solid rgba(76,174,207,.14); background:rgba(8,28,43,.42); box-sizing:border-box; }
+.tree-row.selected { background:linear-gradient(90deg,rgba(33,154,194,.25),rgba(6,26,41,.2)); box-shadow:inset 3rpx 0 #43d3f4; }
+.tree-caret { width:25rpx; color:#4e829a; font-size:17rpx; }
+.node-icon { display:block; flex:0 0 42rpx; width:42rpx; height:42rpx; margin-right:10rpx; }
+.node-main { flex:1; min-width:0; }
+.node-name { display:block;color:#d3e9f2;font-size:22rpx;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.node-meta { display:block;color:#557f93;font:17rpx monospace;margin-top:3rpx; }
+.node-defects { min-width:27rpx;height:27rpx;line-height:27rpx;text-align:center;color:#fff;background:#d8495e;font:18rpx monospace;margin-right:14rpx; }
+.node-status { width:9rpx;height:9rpx;background:#32d69a;box-shadow:0 0 8rpx #32d69a; }
+.node-status.status-warning{background:#e8b43f;box-shadow:0 0 8rpx #e8b43f}.node-status.status-danger{background:#ff4059;box-shadow:0 0 8rpx #ff4059}
+.level-0 .node-name { font-weight:700;color:#fff; }
+.level-1 { background:rgba(8,28,43,.6); }
+.tree-line { position:absolute;left:0;top:0;bottom:0;border-left:1rpx dotted rgba(75,184,220,.2); }
+
+/* 方案C */
+.tree{border-top-color:#657177}.tree-row{min-height:82rpx;background:#20272a;border-bottom-color:#485257}.tree-row.selected{background:#3b3728;box-shadow:inset 5rpx 0 #ffc229}.tree-caret{color:#a8b2b6}.node-name{color:#fff;font-size:24rpx}.node-meta{color:#a9b3b7;font-size:18rpx}.node-defects{background:#d94c46}.node-status{background:#68e378;box-shadow:none}.node-status.status-warning{background:#ffc229;box-shadow:none}.node-status.status-danger{background:#ff6258;box-shadow:none}.level-1{background:#252d30}.tree-line{border-left-color:#5b666b}
+.tree-row{min-height:88rpx}.tree-row-press{background:#2b3539}.node-name{font-size:25rpx}.node-meta{color:#aeb9bd;font-size:20rpx;line-height:1.4}

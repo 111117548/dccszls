@@ -1,0 +1,11 @@
+:host { display: block; }
+.marker { position:absolute; z-index:20; transform:translate(-50%,-50%); }
+.marker-core { position:relative; z-index:2; width:32rpx; height:32rpx; line-height:32rpx; text-align:center; color:#fff; background:#ff4059; border:2rpx solid #ffd6dc; font-size:20rpx; font-weight:800; box-shadow:0 0 14rpx rgba(255,64,89,.85); }
+.marker-moderate .marker-core, .marker-minor .marker-core { background:#f6b73c; border-color:#fff1c7; box-shadow:0 0 14rpx rgba(246,183,60,.8); }
+.marker-pulse { position:absolute; left:50%; top:50%; width:44rpx; height:44rpx; transform:translate(-50%,-50%); border:2rpx solid rgba(255,64,89,.8); animation:pulse 1.8s infinite; }
+.marker-label { position:absolute; left:42rpx; top:-3rpx; padding:4rpx 8rpx; white-space:nowrap; color:#fff; background:rgba(5,15,28,.9); border-left:3rpx solid #ff4059; font-size:18rpx; }
+.marker-compact .marker-label { display:none; }
+@keyframes pulse { 0%{opacity:1;transform:translate(-50%,-50%) scale(.7)} 100%{opacity:0;transform:translate(-50%,-50%) scale(1.7)} }
+
+/* 方案C */
+.marker-core{width:36rpx;height:36rpx;line-height:36rpx;background:#ff6258;border:3rpx solid #fff;box-shadow:0 0 12rpx rgba(255,98,88,.7)}.marker-moderate .marker-core,.marker-minor .marker-core{color:#111619;background:#ffc229;border-color:#fff1bd;box-shadow:0 0 12rpx rgba(255,194,41,.7)}.marker-pulse{border-color:#ffc229}.marker-label{color:#fff;background:#20272a;border-left:5rpx solid #ffc229;font-size:19rpx}
