@@ -191,3 +191,26 @@
   .check-actions button{height:auto;min-height:72rpx;padding:8rpx;line-height:1.25}
 }
 
+/* Ant-style AI flow: clear tabs, one primary action and quiet cards. */
+.ai-screen{background:var(--bg);color:var(--text)}
+.ai-subnav{border-color:var(--line-soft);background:#fff}.ai-subnav>view.active{color:#1677ff}.ai-subnav>view.active:after{background:#1677ff}
+.start-ai{border-radius:20rpx;background:#1677ff;box-shadow:none}.album-entry{color:#1677ff;border-color:#91caff;border-radius:16rpx}
+.ai-stats,.capture-config,.analysis-state,.defect-confirm,.check-progress,.check-card{border-color:var(--line-soft);border-radius:24rpx;box-shadow:var(--shadow-sm)}
+.recent-task{border-color:var(--line-soft);border-radius:20rpx;box-shadow:var(--shadow-sm)}.recent-task:active{background:#f5faff}.task-arrow{color:#bfbfbf}
+.check-tabs{background:var(--bg)}.check-tab{border-radius:999rpx}.check-tab.active{color:#1677ff;border-color:#91caff;background:#e6f4ff}
+.capture-actions button,.result-actions button,.committed-actions button,.check-bottom button{border-radius:16rpx}
+
+/* Keep the primary action readable on every phone width. */
+.start-ai{width:calc(100% - 96rpx);height:96rpx;min-height:96rpx;margin:32rpx 48rpx 16rpx;padding:0 24rpx;overflow:visible;border:0}
+.start-ai label{display:block;width:100%;overflow:visible;font-size:34rpx;font-weight:600;line-height:1.2;text-align:center;white-space:nowrap;text-overflow:clip}
+@media (max-width:360px){.start-ai{width:calc(100% - 56rpx);min-height:92rpx;margin-right:28rpx;margin-left:28rpx;padding:0 16rpx}.start-ai label{font-size:31rpx;white-space:nowrap}}
+
+/* 独立智能检测工作流：概况、步骤、操作和未闭环任务分层。 */
+.smart-overview-card,.detection-flow-card,.detection-action-card{margin:22rpx 28rpx 0;padding:26rpx;border:1rpx solid var(--line-soft);border-radius:24rpx;background:#fff;box-shadow:var(--shadow-sm)}
+.smart-card-kicker,.smart-card-title,.smart-card-copy{display:block}.smart-card-kicker{color:var(--brand);font-size:20rpx;font-weight:600}.smart-card-title{margin-top:5rpx;font-size:36rpx;font-weight:700;line-height:1.3}.smart-card-copy{margin-top:7rpx;color:var(--text-3);font-size:21rpx;line-height:1.5}
+.smart-overview-card .smart-overview-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:24rpx 0 0;padding:22rpx 0 0;border:0;border-top:1rpx solid var(--line-soft);border-radius:0;box-shadow:none}.smart-overview-card .smart-overview-stats view{min-width:0}.smart-overview-card .smart-overview-stats label{font-size:20rpx}.smart-overview-card .smart-overview-stats text{font-size:36rpx}
+.smart-section-head text,.smart-section-head label{display:block}.smart-section-head text{font-size:29rpx;font-weight:700}.smart-section-head label{margin-top:5rpx;color:var(--text-3);font-size:20rpx;line-height:1.45}
+.detection-flow{display:flex;align-items:flex-start;justify-content:space-between;margin-top:24rpx}.detection-flow>view{flex:1;min-width:0;text-align:center}.detection-flow>view>text{display:flex;align-items:center;justify-content:center;width:52rpx;height:52rpx;margin:auto;color:#fff;font-size:22rpx;font-weight:700;border-radius:50%;background:var(--brand)}.detection-flow>view>label{display:block;margin-top:9rpx;color:var(--text-2);font-size:18rpx;line-height:1.35}.detection-flow .flow-arrow{flex:none;margin:12rpx 5rpx 0;color:#91b6e2;font-size:24rpx}
+.detection-action-card .start-ai{width:100%;height:88rpx;min-height:88rpx;margin:24rpx 0 12rpx;padding:0 18rpx;border-radius:16rpx}.detection-action-card .start-ai label{font-size:29rpx}.detection-action-card .album-entry{width:100%;min-height:70rpx;margin:0;padding:0;color:var(--brand);font-size:22rpx;line-height:68rpx;border:1rpx solid #91caff;border-radius:16rpx;background:#fff}
+.task-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20rpx;margin:30rpx 30rpx 14rpx}.task-section-head text{font-size:30rpx;font-weight:700}.task-section-head label{color:var(--text-3);font-size:20rpx}.recent-empty{margin:0 28rpx;padding:48rpx 24rpx;border-color:var(--line-soft);border-radius:20rpx;background:#fff}
+@media (max-width:360px){.smart-overview-card,.detection-flow-card,.detection-action-card{margin-right:18rpx;margin-left:18rpx;padding-right:20rpx;padding-left:20rpx}.detection-flow .flow-arrow{margin-right:1rpx;margin-left:1rpx}.detection-flow>view>label{font-size:16rpx}.detection-action-card .start-ai{width:100%;min-height:88rpx;margin-right:0;margin-left:0}.detection-action-card .start-ai label{font-size:27rpx}.recent-empty{margin-right:18rpx;margin-left:18rpx}}

@@ -2,40 +2,14 @@
 // The real GLB/WebGL model is intentionally outside this module.
 
 var STORAGE_KEY = 'esp_v4_foundation';
-var SCHEMA_VERSION = '7.0-logistics-alerts';
+var SCHEMA_VERSION = '8.0-stage-catalog';
+var stageCatalog = require('./stage-catalog');
 
-var STAGES = [
-  { index: 1, id: 'stage-01', code: 'S01', name: '支座安装', shortName: '支座', areaKeys: ['support-bearing'], plannedQuantity: 40, unit: '套', plannedLoads: 5, dispatchThreshold: 65 },
-  { index: 2, id: 'stage-02', code: 'S02', name: '基础梁安装', shortName: '基础梁', areaKeys: ['foundation-beam'], plannedQuantity: 24, unit: '榀', plannedLoads: 8, dispatchThreshold: 65 },
-  { index: 3, id: 'stage-03', code: 'S03', name: '钢支架安装', shortName: '钢支架', areaKeys: ['steel-support'], plannedQuantity: 960, unit: '件', plannedLoads: 50, dispatchThreshold: 80 },
-  { index: 4, id: 'stage-04', code: 'S04', name: '灰斗安装', shortName: '灰斗', areaKeys: ['ashopper'], plannedQuantity: 20, unit: '台', plannedLoads: 10, dispatchThreshold: 60 },
-  { index: 5, id: 'stage-05', code: 'S05', name: '壳体安装', shortName: '壳体', areaKeys: ['shell'], plannedQuantity: 4, unit: '室', plannedLoads: 18, dispatchThreshold: 50 },
-  { index: 6, id: 'stage-06', code: 'S06', name: '进出口安装', shortName: '进出口', areaKeys: ['horn'], plannedQuantity: 8, unit: '套', plannedLoads: 12, dispatchThreshold: 65 },
-  { index: 7, id: 'stage-07', code: 'S07', name: '阳极系统安装', shortName: '阳极系统', areaKeys: ['anode'], plannedQuantity: 20, unit: '电场', plannedLoads: 30, dispatchThreshold: 65 },
-  { index: 8, id: 'stage-08', code: 'S08', name: '阴极系统安装', shortName: '阴极系统', areaKeys: ['cathode'], plannedQuantity: 20, unit: '电场', plannedLoads: 30, dispatchThreshold: 65 },
-  { index: 9, id: 'stage-09', code: 'S09', name: '振打系统安装', shortName: '振打系统', areaKeys: ['rapping'], plannedQuantity: 20, unit: '套', plannedLoads: 12, dispatchThreshold: 65 },
-  { index: 10, id: 'stage-10', code: 'S10', name: '高压设备安装', shortName: '高压设备', areaKeys: ['hvline'], plannedQuantity: 20, unit: '套', plannedLoads: 8, dispatchThreshold: 65 },
-  { index: 11, id: 'stage-11', code: 'S11', name: '平台扶梯安装', shortName: '平台扶梯', areaKeys: ['platform'], plannedQuantity: 1, unit: '项', plannedLoads: 8, dispatchThreshold: 65 },
-  { index: 12, id: 'stage-12', code: 'S12', name: '电气仪表安装', shortName: '电气仪表', areaKeys: ['instrument'], plannedQuantity: 1, unit: '项', plannedLoads: 6, dispatchThreshold: 65 },
-  { index: 13, id: 'stage-13', code: 'S13', name: '调试验收', shortName: '调试验收', areaKeys: ['commissioning'], plannedQuantity: 1, unit: '项', plannedLoads: 1, dispatchThreshold: 65 }
-];
+var STAGES = stageCatalog.STAGES;
 
 // Upstream installation progress drives downstream dispatch preparation.
 // A source component may trigger more than one downstream component.
-var STAGE_DEPENDENCIES = [
-  { sourceIndex: 1, targetIndex: 2, threshold: 65 },
-  { sourceIndex: 2, targetIndex: 3, threshold: 65 },
-  { sourceIndex: 3, targetIndex: 4, threshold: 80 },
-  { sourceIndex: 4, targetIndex: 5, threshold: 60 },
-  { sourceIndex: 5, targetIndex: 6, threshold: 50 },
-  { sourceIndex: 5, targetIndex: 7, threshold: 50 },
-  { sourceIndex: 5, targetIndex: 8, threshold: 50 },
-  { sourceIndex: 8, targetIndex: 9, threshold: 65 },
-  { sourceIndex: 9, targetIndex: 10, threshold: 65 },
-  { sourceIndex: 10, targetIndex: 11, threshold: 65 },
-  { sourceIndex: 11, targetIndex: 12, threshold: 65 },
-  { sourceIndex: 12, targetIndex: 13, threshold: 65 }
-];
+var STAGE_DEPENDENCIES = stageCatalog.DEPENDENCIES;
 
 var MODEL_TEMPLATES = [{
   id: 'g793-esp-four-chamber', drawingNo: 'G793.0', name: 'G793四室五电场低低温电除尘器',
@@ -267,13 +241,16 @@ function makeStageProgress(actualStageIndex, stageMetrics) {
   return STAGES.map(function (stage) {
     var metric = stageMetrics && stageMetrics[stage.id] || createStageMetric(stage, stage.index < actualStageIndex ? 'completed' : stage.index === actualStageIndex ? 'working' : 'pending');
     var progress = progressOf(metric.installedQuantity, metric.plannedQuantity);
+    var manifestArrival = Number(metric.manifestPlannedPackages || 0) > 0;
     var status = progress >= 100 ? 'completed' : (progress > 0 || stage.index === actualStageIndex) ? 'working' : 'pending';
     return Object.assign({}, stage, {
       status: status,
       statusName: status === 'completed' ? '已完成' : status === 'working' ? '当前阶段' : '待施工',
       progress: progress,
       installedProgress: progress,
-      arrivedProgress: progressOf(metric.arrivedQuantity, metric.plannedQuantity),
+      arrivedProgress: manifestArrival
+        ? progressOf(metric.manifestArrivedPackages, metric.manifestPlannedPackages)
+        : progressOf(metric.arrivedQuantity, metric.plannedQuantity),
       shippedProgress: progressOf(metric.shippedQuantity, metric.plannedQuantity),
       plannedQuantity: metric.plannedQuantity,
       productionQuantity: metric.productionQuantity,
@@ -313,6 +290,12 @@ function normalizeArrivalLedger(value) {
   return ledger;
 }
 function arrivalBoxKey(value) { return normalizeText(value).replace(/\s+/g, '').toUpperCase(); }
+function arrivalSplitBoxRoot(value) {
+  var key = arrivalBoxKey(value);
+  // Actual shipping may split one planned box into A/B loads (B410A,
+  // B410B or B494(A)). Exact demand ids always win; this root is fallback.
+  return key.replace(/\(([A-Z])\)$/i, '').replace(/(\d)[A-Z]$/i, '$1');
+}
 function sanitizeArrivalPackage(item) {
   item = item || {};
   return {
@@ -409,6 +392,27 @@ function applyArrivalDemandManifest(state, payload, actor) {
     if (old && old.arrivedAt) {
       pkg.arrivedAt = old.arrivedAt;
       pkg.arrivalFileName = old.arrivalFileName || '';
+      pkg.arrivalSource = old.arrivalSource || (old.arrivalFileName === '手工填报' ? 'manual' : 'manifest');
+      pkg.arrivalReceiptBoxNos = clone(old.arrivalReceiptBoxNos || []);
+      pkg.arrivalReceiptName = old.arrivalReceiptName || '';
+      pkg.arrivalReceiptDrawingNo = old.arrivalReceiptDrawingNo || '';
+      pkg.arrivalSheetName = old.arrivalSheetName || '';
+      pkg.arrivalVehicleNumber = Number(old.arrivalVehicleNumber || 0);
+      pkg.arrivalMatchMethod = old.arrivalMatchMethod || '';
+      pkg.arrivalImportId = old.arrivalImportId || '';
+    }
+    if (old && old.arrivalManualExcludedAt) {
+      pkg.arrivalManualExcludedAt = old.arrivalManualExcludedAt;
+      pkg.arrivalManualExcludedBy = old.arrivalManualExcludedBy || '';
+      pkg.arrivalReceiptBoxNos = clone(old.arrivalReceiptBoxNos || []);
+      pkg.arrivalReceiptName = old.arrivalReceiptName || '';
+      pkg.arrivalReceiptDrawingNo = old.arrivalReceiptDrawingNo || '';
+      pkg.arrivalSheetName = old.arrivalSheetName || '';
+      pkg.arrivalVehicleNumber = Number(old.arrivalVehicleNumber || 0);
+      pkg.arrivalMatchMethod = old.arrivalMatchMethod || '';
+      pkg.arrivalImportId = old.arrivalImportId || '';
+      pkg.arrivalFileName = old.arrivalFileName || '';
+      pkg.arrivalSource = old.arrivalSource || 'manifest';
     }
     normalized.push(pkg);
   });
@@ -441,30 +445,125 @@ function applyArrivalReceiptManifest(state, payload, actor) {
   var demandMap = {};
   ledger.packages.forEach(function (item) { demandMap[arrivalBoxKey(item.boxNo)] = item; });
   var now = Date.now();
+  var importId = createId('ARRIVAL');
   var matched = 0;
+  var matchedDemand = {};
   var added = 0;
   var duplicates = 0;
+  var aliasMatched = 0;
+  var consolidated = 0;
+  var verifiedManual = 0;
+  var manualExcluded = 0;
   var unmatched = [];
   var seen = {};
+  var stageMap = {};
+  function stageStat(target) {
+    var stageIndex = Math.max(0, Math.min(13, Number(target && target.stageIndex) || 0));
+    var stage = stageIndex > 0 ? STAGES[stageIndex - 1] : null;
+    if (!stageMap[stageIndex]) {
+      stageMap[stageIndex] = {
+        stageIndex: stageIndex,
+        stageName: stage ? (stage.shortName || stage.name) : '待归类',
+        receiptPackages: 0,
+        matchedPackages: 0,
+        addedPackages: 0,
+        duplicatePackages: 0,
+        consolidatedPackages: 0,
+        manualExcludedPackages: 0
+      };
+    }
+    return stageMap[stageIndex];
+  }
   receiptPackages.forEach(function (item) {
     var key = arrivalBoxKey(item.boxNo);
     if (!key || seen[key]) return;
     seen[key] = true;
     var target = demandMap[key];
-    if (!target) { unmatched.push({ boxNo: normalizeText(item.boxNo), name: normalizeText(item.name), fileName: normalizeText(payload.fileName), importedAt: now }); return; }
+    var matchMethod = 'box_exact';
+    if (!target) {
+      var rootKey = arrivalSplitBoxRoot(key);
+      if (rootKey !== key && demandMap[rootKey]) {
+        target = demandMap[rootKey];
+        matchMethod = 'split_box';
+        aliasMatched += 1;
+      }
+    }
+    if (!target) {
+      unmatched.push({
+        boxNo: normalizeText(item.boxNo), name: normalizeText(item.name), drawingNo: normalizeText(item.drawingNo),
+        stageIndex: Number(item.stageIndex || 0), stageName: normalizeText(item.stageName),
+        sourceSheetName: normalizeText(item.sourceSheetName), vehicleNumber: Number(item.vehicleNumber || 0),
+        fileName: normalizeText(payload.fileName), importedAt: now
+      });
+      return;
+    }
     matched += 1;
-    if (target.arrivedAt) duplicates += 1;
-    else {
+    var targetKey = arrivalBoxKey(target.boxNo);
+    var stat = stageStat(target);
+    stat.receiptPackages += 1;
+    if (!matchedDemand[targetKey]) stat.matchedPackages += 1;
+    matchedDemand[targetKey] = true;
+    target.arrivalReceiptBoxNos = Array.isArray(target.arrivalReceiptBoxNos) ? target.arrivalReceiptBoxNos : [];
+    if (target.arrivalReceiptBoxNos.indexOf(normalizeText(item.boxNo)) < 0) target.arrivalReceiptBoxNos.push(normalizeText(item.boxNo));
+    target.arrivalReceiptName = normalizeText(item.name);
+    target.arrivalReceiptDrawingNo = normalizeText(item.drawingNo);
+    target.arrivalSheetName = normalizeText(item.sourceSheetName || payload.sheetName);
+    target.arrivalVehicleNumber = Number(item.vehicleNumber || 0);
+    target.arrivalMatchMethod = matchMethod;
+    if (target.arrivalManualExcludedAt) {
+      manualExcluded += 1;
+      stat.manualExcludedPackages += 1;
+      target.arrivalFileName = normalizeText(payload.fileName) || '到货清单';
+      target.arrivalSource = 'manifest';
+      target.arrivalImportId = importId;
+      return;
+    }
+    if (target.arrivedAt) {
+      if (target.arrivalSource === 'manual') verifiedManual += 1;
+      else if (target.arrivalImportId === importId) {
+        consolidated += 1;
+        stat.consolidatedPackages += 1;
+      } else {
+        duplicates += 1;
+        stat.duplicatePackages += 1;
+      }
+      target.arrivalSource = 'manifest';
+      target.arrivalFileName = normalizeText(payload.fileName) || '到货清单';
+      target.arrivalImportId = importId;
+    } else {
+      // Manual reporting records a stage total rather than a known box number.
+      // When a later manifest identifies a different box in the same stage,
+      // transfer one manual marker so the cumulative total is not doubled.
+      var manualProxy = ledger.packages.find(function (pkg) {
+        return pkg !== target && Number(pkg.stageIndex) === Number(target.stageIndex) && pkg.arrivedAt && pkg.arrivalSource === 'manual';
+      });
+      if (manualProxy) {
+        delete manualProxy.arrivedAt;
+        delete manualProxy.arrivalSource;
+        delete manualProxy.arrivalFileName;
+        verifiedManual += 1;
+      } else {
+        added += 1;
+        stat.addedPackages += 1;
+      }
       target.arrivedAt = now;
       target.arrivalFileName = normalizeText(payload.fileName) || '到货清单';
-      added += 1;
+      target.arrivalSource = 'manifest';
+      target.arrivalImportId = importId;
     }
   });
   ledger.unmatchedReceipts = unmatched.concat(ledger.unmatchedReceipts || []).slice(0, 200);
+  var stageBreakdown = Object.keys(stageMap).map(function (key) { return stageMap[key]; }).sort(function (a, b) {
+    return Number(a.stageIndex) - Number(b.stageIndex);
+  });
   ledger.receiptImports.unshift({
-    id: createId('ARRIVAL'), fileID: normalizeText(payload.fileID), fileName: normalizeText(payload.fileName) || '到货清单',
-    packageCount: receiptPackages.length, matchedPackages: matched, addedPackages: added,
-    duplicatePackages: duplicates, unmatchedPackages: unmatched.length,
+    id: importId, fileID: normalizeText(payload.fileID), fileName: normalizeText(payload.fileName) || '到货清单',
+    sheetName: normalizeText(payload.sheetName), vehicleCount: Number(payload.vehicleCount || 0),
+    firstVehicleNumber: Number(payload.firstVehicleNumber || 0), lastVehicleNumber: Number(payload.lastVehicleNumber || 0),
+    packageCount: receiptPackages.length, matchedPackages: matched, matchedDemandPackages: Object.keys(matchedDemand).length,
+    aliasMatchedPackages: aliasMatched, consolidatedPackages: consolidated, addedPackages: added,
+    duplicatePackages: duplicates, verifiedManualPackages: verifiedManual, manualExcludedPackages: manualExcluded,
+    unmatchedPackages: unmatched.length, stageBreakdown: stageBreakdown,
     importedAt: now, importedBy: actor && actor.name || '现场用户'
   });
   ledger.receiptImports = ledger.receiptImports.slice(0, 30);
@@ -478,9 +577,65 @@ function applyArrivalReceiptManifest(state, payload, actor) {
   detail.lastImport = clone(ledger.receiptImports[0]);
   return detail;
 }
+function applyStageArrivalQuantity(state, stageIndex, quantity, actor) {
+  var deviceState = getCurrentDeviceState(state);
+  var ledger = normalizeArrivalLedger(deviceState.arrivalLedger);
+  if (!ledger.demand || !ledger.packages.length) throw new Error('请先在设备到货台账导入需求总清单');
+  var targetStage = Math.max(1, Math.min(13, Number(stageIndex) || 1));
+  var stagePackages = ledger.packages.filter(function (item) { return Number(item.stageIndex) === targetStage; });
+  if (!stagePackages.length) throw new Error('需求总清单中没有识别到该部件的箱件');
+  var requested = Number(quantity);
+  if (!isFinite(requested) || requested < 0 || requested > stagePackages.length || Math.floor(requested) !== requested) {
+    throw new Error('到货数量应为 0—' + stagePackages.length + ' 的整数箱');
+  }
+  var now = Date.now();
+  var orderedPackages = stagePackages.slice().sort(function (a, b) {
+    var aReceipt = a.arrivalImportId || (a.arrivalReceiptBoxNos && a.arrivalReceiptBoxNos.length) ? 1 : 0;
+    var bReceipt = b.arrivalImportId || (b.arrivalReceiptBoxNos && b.arrivalReceiptBoxNos.length) ? 1 : 0;
+    if (aReceipt !== bReceipt) return bReceipt - aReceipt;
+    return arrivalBoxKey(a.boxNo).localeCompare(arrivalBoxKey(b.boxNo));
+  });
+  orderedPackages.forEach(function (item, index) {
+    var hasReceiptEvidence = !!(item.arrivalImportId || (item.arrivalReceiptBoxNos && item.arrivalReceiptBoxNos.length));
+    if (index < requested) {
+      item.arrivedAt = item.arrivedAt || now;
+      item.arrivalSource = hasReceiptEvidence ? 'manifest' : 'manual';
+      item.arrivalFileName = hasReceiptEvidence ? (item.arrivalFileName || '到货清单') : '手工填报';
+      delete item.arrivalManualExcludedAt;
+      delete item.arrivalManualExcludedBy;
+    } else {
+      delete item.arrivedAt;
+      if (hasReceiptEvidence) {
+        item.arrivalManualExcludedAt = now;
+        item.arrivalManualExcludedBy = actor && actor.name || '现场用户';
+        item.arrivalSource = 'manifest';
+      } else {
+        delete item.arrivalSource;
+        delete item.arrivalFileName;
+        delete item.arrivalManualExcludedAt;
+        delete item.arrivalManualExcludedBy;
+      }
+    }
+  });
+  var stage = STAGES[targetStage - 1];
+  deviceState.stageMetrics = normalizeStageMetrics(deviceState.stageMetrics, deviceState.actualStageIndex || 1);
+  var metric = deviceState.stageMetrics[stage.id];
+  metric.summaryOverrideEnabled = false;
+  metric.manualArrivalUpdatedAt = now;
+  metric.manualArrivalUpdatedBy = actor && actor.name || '现场用户';
+  metric.manualArrivalQuantity = requested;
+  ledger.updatedAt = now;
+  deviceState.arrivalLedger = ledger;
+  syncArrivalMetrics(deviceState);
+  refreshDeviceProgress(deviceState);
+  evaluateDispatchAlerts(deviceState, new Date());
+  state.updatedAt = now;
+  return getStageProgressDetail(state, targetStage);
+}
 function createDeviceState(stageIndex, qualityScore) {
   var safeStage = Math.max(1, Math.min(13, Number(stageIndex) || 1));
   return refreshDeviceProgress({
+    stageSchemaVersion: stageCatalog.VERSION,
     actualStageIndex: safeStage,
     qualityScore: Number(qualityScore) || 92,
     qualityStatus: 'warning',
@@ -503,10 +658,83 @@ function createInitialState() {
     currentDeviceId: 'pengyang-esp-01', deviceStates: deviceStates, updatedAt: Date.now()
   };
 }
+// Migrate once per device, including states later restored from the cloud.
+// Keep raw quantities: old foundation beams (榀) and steel (件) cannot be added.
+function migrateLegacyDeviceStages(deviceState) {
+  if (deviceState.stageSchemaVersion === stageCatalog.VERSION) return deviceState;
+  var oldMetrics = clone(deviceState.stageMetrics || {});
+  deviceState.legacyStageBackup = deviceState.legacyStageBackup || {
+    stageMetrics: oldMetrics,
+    actualStageIndex: deviceState.actualStageIndex,
+    dispatchAlerts: clone(deviceState.dispatchAlerts || [])
+  };
+  var mergedIds = {
+    'stage-03': ['stage-02', 'stage-03'],
+    'stage-07': ['stage-07', 'stage-08'],
+    'stage-12': ['stage-10', 'stage-12']
+  };
+  var metrics = {};
+  STAGES.forEach(function (stage) {
+    var metric = Object.assign(createStageMetric(stage, 'pending'), oldMetrics[stage.id] || {});
+    if (mergedIds[stage.id]) {
+      var members = mergedIds[stage.id].map(function (id) { return oldMetrics[id] || {}; });
+      metric = createStageMetric(stage, 'pending');
+      metric.plannedQuantity = 100;
+      metric.unit = '%';
+      ['productionQuantity', 'shippedQuantity', 'arrivedQuantity', 'installedQuantity'].forEach(function (key) {
+        metric[key] = Math.min.apply(Math, members.map(function (item) { return progressOf(item[key], item.plannedQuantity); }));
+      });
+      ['plannedLoads', 'shippedLoads', 'arrivedLoads'].forEach(function (key) {
+        metric[key] = members.reduce(function (sum, item) { return sum + (Number(item[key]) || 0); }, 0);
+      });
+      // Manual box summaries can be added only when both source units agree.
+      if (members.every(function (item) { return item.summaryOverrideEnabled && item.summaryUnit === members[0].summaryUnit; })) {
+        metric.summaryOverrideEnabled = true;
+        metric.summaryUnit = members[0].summaryUnit || '箱';
+        metric.summaryDemandQuantity = members.reduce(function (sum, item) { return sum + (Number(item.summaryDemandQuantity) || 0); }, 0);
+        metric.summaryArrivalQuantity = members.reduce(function (sum, item) { return sum + (Number(item.summaryArrivalQuantity) || 0); }, 0);
+      }
+      metric.forecastBasePercent = metric.installedQuantity;
+      metric.migrationNote = '合并前原始记录已保留；合并进度取子项较低值，可按现场实际重新填报';
+      metric.mergedFromStageIds = mergedIds[stage.id].slice();
+    }
+    metric.stageId = stage.id;
+    metrics[stage.id] = metric;
+  });
+  deviceState.stageMetrics = metrics;
+  deviceState.actualStageIndex = stageCatalog.legacyIndex(deviceState.actualStageIndex) || 1;
+  var ledger = normalizeArrivalLedger(deviceState.arrivalLedger);
+  function migrateReference(item, allowSpecial) {
+    if (!item || typeof item !== 'object') return;
+    if (Array.isArray(item)) { item.forEach(function (child) { migrateReference(child, allowSpecial); }); return; }
+    if (item.stageIndex !== undefined) {
+      item.legacyStageIndex = item.stageIndex;
+      item.legacyStageName = item.stageName || '';
+      item.stageIndex = (allowSpecial ? stageCatalog.specialIndex(item.name) : 0) || stageCatalog.legacyIndex(item.stageIndex);
+      item.stageName = item.stageIndex ? STAGES[item.stageIndex - 1].shortName : '待归类';
+    }
+    if (item.previousStageIndex !== undefined) item.previousStageIndex = stageCatalog.legacyIndex(item.previousStageIndex);
+    if (item.stageId) item.stageId = stageCatalog.canonicalId(item.stageId);
+    Object.keys(item).forEach(function (key) {
+      if (item[key] && typeof item[key] === 'object') migrateReference(item[key], allowSpecial);
+    });
+  }
+  migrateReference(ledger.packages, true);
+  migrateReference(ledger.unmatchedReceipts, true);
+  migrateReference(ledger.receiptImports, false);
+  migrateReference(deviceState.progressLogs, false);
+  deviceState.arrivalLedger = ledger;
+  // Old alerts describe the old dependency graph; preserve them in the backup.
+  deviceState.dispatchAlerts = [];
+  deviceState.stageSchemaVersion = stageCatalog.VERSION;
+  syncArrivalMetrics(deviceState);
+  return deviceState;
+}
 function normalizeState(saved) {
   var initial = createInitialState();
   if (!saved) return initial;
-  var state = Object.assign(initial, saved);
+  saved = clone(saved);
+  var state = Object.assign({}, initial, saved);
   state.schemaVersion = SCHEMA_VERSION;
   state.projects = Array.isArray(saved.projects) && saved.projects.length ? saved.projects : initial.projects;
   state.devices = Array.isArray(saved.devices) && saved.devices.length ? saved.devices : initial.devices;
@@ -517,6 +745,7 @@ function normalizeState(saved) {
     deviceState.progressLogs = Array.isArray(deviceState.progressLogs) ? deviceState.progressLogs : [];
     deviceState.dispatchAlerts = Array.isArray(deviceState.dispatchAlerts) ? deviceState.dispatchAlerts : [];
     deviceState.arrivalLedger = normalizeArrivalLedger(deviceState.arrivalLedger);
+    migrateLegacyDeviceStages(deviceState);
     state.deviceStates[deviceId] = refreshDeviceProgress(deviceState);
   });
   if (!findById(state.projects, state.currentProjectId)) state.currentProjectId = state.projects[0].id;
@@ -660,7 +889,9 @@ function getStageProgressDetail(state, stageIndex) {
   var stage = STAGES[safeStage - 1];
   var metric = deviceState.stageMetrics[stage.id];
   var installedProgress = progressOf(metric.installedQuantity, metric.plannedQuantity);
-  var arrivedProgress = progressOf(metric.arrivedQuantity, metric.plannedQuantity);
+  var arrivedProgress = Number(metric.manifestPlannedPackages || 0) > 0
+    ? progressOf(metric.manifestArrivedPackages, metric.manifestPlannedPackages)
+    : progressOf(metric.arrivedQuantity, metric.plannedQuantity);
   var shippedProgress = progressOf(metric.shippedQuantity, metric.plannedQuantity);
   var analytics = getDailyAnalytics(metric, new Date());
   analytics.projection = getProgressProjection(metric, new Date());
@@ -714,6 +945,7 @@ function updateStageProgress(state, stageIndex, payload, actor) {
   });
   if (payload.summaryUnit !== undefined) metric.summaryUnit = normalizeText(payload.summaryUnit) || '箱';
   if (payload.actualProgressPercent !== undefined && payload.actualProgressPercent !== '') {
+    delete metric.migrationNote;
     var actualPercent = clamp(payload.actualProgressPercent, 0, 100);
     metric.installedQuantity = quantityAt(metric.plannedQuantity, actualPercent / 100);
     metric.arrivedQuantity = Math.max(Number(metric.arrivedQuantity || 0), metric.installedQuantity);
@@ -886,6 +1118,35 @@ function getContext(state) {
   return { project: project, device: device, deviceState: deviceState, stage: stage, template: getModelTemplate(state, device.modelTemplateId || project.modelTemplateId) };
 }
 
+// A construction daily report follows the real installation sequence. Any
+// unfinished component at or before the current stage remains active work;
+// later stages are intentionally excluded until the site advances to them.
+function getDailyReportSuggestions(state) {
+  var context = getContext(state);
+  refreshDeviceProgress(context.deviceState);
+  var currentStageIndex = Math.max(1, Math.min(STAGES.length, Number(context.deviceState.actualStageIndex) || 1));
+  var linkedStages = (context.deviceState.stageProgress || []).filter(function (item) {
+    var progress = Number(item.installedProgress === undefined ? item.progress : item.installedProgress) || 0;
+    return Number(item.index) <= currentStageIndex && progress < 100;
+  }).map(function (item) {
+    var progress = Number(item.installedProgress === undefined ? item.progress : item.installedProgress) || 0;
+    return {
+      stageIndex: Number(item.index),
+      stageName: item.name,
+      shortName: item.shortName || item.name,
+      installedProgress: round1(progress)
+    };
+  });
+  var items = linkedStages.map(function (item) { return item.stageName; });
+  return {
+    currentStageIndex: currentStageIndex,
+    currentStageName: (STAGES[currentStageIndex - 1] || STAGES[0]).name,
+    linkedStages: clone(linkedStages),
+    todayItems: items.slice(),
+    tomorrowItems: items.slice()
+  };
+}
+
 module.exports = {
   STORAGE_KEY: STORAGE_KEY, SCHEMA_VERSION: SCHEMA_VERSION, STAGES: STAGES,
   STAGE_DEPENDENCIES: STAGE_DEPENDENCIES,
@@ -894,6 +1155,7 @@ module.exports = {
   getDevicesByProject: getDevicesByProject, getCurrentProject: getCurrentProject,
   getCurrentDevice: getCurrentDevice, getCurrentDeviceState: getCurrentDeviceState,
   getModelTemplate: getModelTemplate, getContext: getContext,
+  getDailyReportSuggestions: getDailyReportSuggestions,
   switchProject: switchProject, switchDevice: switchDevice, setActualStage: setActualStage,
   getStageProgressDetail: getStageProgressDetail, updateStageProgress: updateStageProgress,
   getProgressProjection: getProgressProjection,
@@ -901,6 +1163,7 @@ module.exports = {
   getArrivalLedgerDetail: getArrivalLedgerDetail,
   applyArrivalDemandManifest: applyArrivalDemandManifest,
   applyArrivalReceiptManifest: applyArrivalReceiptManifest,
+  applyStageArrivalQuantity: applyStageArrivalQuantity,
   acknowledgeDispatchAlert: acknowledgeDispatchAlert,
   evaluateDispatchAlerts: evaluateDispatchAlerts,
   upsertProject: upsertProject, removeProject: removeProject,

@@ -26,7 +26,7 @@ Page({
     inspectionItemIndex: 0,
     selectedInspectionItemId: '',
     inspectionMethodKey: 'visual_ai',
-    inspectionMethodName: '视觉AI',
+    inspectionMethodName: '智能视觉',
     inspectionAiApplicable: true,
     inspectionEvidenceHint: '',
     standardSource: '',
@@ -96,7 +96,7 @@ Page({
     contextDevice: {},
     aiStats: { pendingConfirm: 0, pending: 0, review: 0, closed: 0 },
     attentionCount: 0,
-    recentTasks: []
+    openTasks: []
   },
 
   // ===== Internal canvas state (not in data) =====
@@ -161,9 +161,9 @@ Page({
         closed: orders.filter(function (item) { return item.status === 'closed'; }).length
       },
       attentionCount: pendingCount + reviewCount,
-      recentTasks: orders.map(function (item) {
+      openTasks: orders.filter(function (item) { return item.status !== 'closed'; }).map(function (item) {
         return Object.assign({}, item, {
-          title: item.title || (item.items && item.items[0] && item.items[0].name) || 'AI缺陷整改任务',
+          title: item.title || (item.items && item.items[0] && item.items[0].name) || '智能缺陷整改任务',
           statusName: item.statusName || statusNames[item.status] || '待整改'
         });
       })
@@ -754,7 +754,7 @@ Page({
     if (!this.data.inspectionAiApplicable) {
       wx.showModal({
         title: this.data.inspectionMethodName + '项目',
-        content: this.data.inspectionEvidenceHint + '\n\n该项目不能仅凭单张照片由AI判定，请在检查清单中录入人工结论。',
+        content: this.data.inspectionEvidenceHint + '\n\n该项目不能仅凭单张照片由智能检测判定，请在检查清单中录入人工结论。',
         showCancel: false,
         confirmText: '知道了'
       });
@@ -860,7 +860,7 @@ Page({
         if (!isCurrentSchema) {
           setTimeout(function () {
             wx.showModal({
-              title: '云端AI函数仍是旧版本',
+              title: '云端智能检测函数仍是旧版本',
               content: '当前云端返回：' + (analysisResult.schemaVersion || '未知版本') + ' / ' + (analysisResult.runtimeVersion || '无运行版本号') + '。本地目标版本为 ai-analysis-v2 / 2026.08.03-ai-v2.2。说明本次部署没有覆盖当前所选云环境中的 ai-analyze。',
               showCancel: false,
               confirmText: '知道了'
@@ -883,7 +883,7 @@ Page({
 
     // Normalize untrusted model output before it can enter the review UI.
     if (!result || typeof result !== 'object') {
-      this._onAIError(new Error('AI返回结果为空或格式无效'));
+      this._onAIError(new Error('智能检测返回结果为空或格式无效'));
       return;
     }
     if (!Array.isArray(result.defects)) result.defects = [];
@@ -1110,7 +1110,7 @@ Page({
         inspectionItemId: d.itemId || self.data.selectedInspectionItemId,
         image: self.data.tempFilePath || '', imageFileID: '', imageBBox: bbox,
         modelMarker: { regionId: fieldContext.fieldId || self.data.selectedDeviceId, x: Math.round((bbox.x + bbox.w / 2) * 100), y: Math.round((bbox.y + bbox.h / 2) * 100) },
-        inspector: d._userAdded ? '人工补录·人工复核' : 'AI检测·人工复核', deadline: ''
+        inspector: d._userAdded ? '人工补录·人工复核' : '智能检测·人工复核', deadline: ''
       });
       d._v3DefectId = spatialDefect.id;
       spatialDefects.push(spatialDefect);
@@ -1118,12 +1118,12 @@ Page({
     this._syncLatestHistoryFromResult();
     var v3State = app.getV3State();
     var inspection = {
-      id: 'INSP-AI-' + Date.now(), name: (deviceNode ? deviceNode.name : areaName) + ' AI安装质量检查',
+      id: 'INSP-AI-' + Date.now(), name: (deviceNode ? deviceNode.name : areaName) + ' 智能安装质量检查',
       projectId: v3State.project.id,
       deviceId: v3State.project.deviceId || '',
       stageId: (deviceNode && deviceNode.stageId) || areaSource.stageId || '', sourceDocument: areaSource.document || '',
       deviceNodeId: this.data.selectedDeviceId, inspectionItemId: this.data.selectedInspectionItemId,
-      inspectionMethod: this.data.inspectionMethodKey, inspector: 'AI检测·人工复核', photoCount: 1,
+      inspectionMethod: this.data.inspectionMethodKey, inspector: '智能检测·人工复核', photoCount: 1,
       itemCount: (result.itemResults || []).length, defectCount: (result.defects || []).length,
       status: 'completed', reviewStatus: 'confirmed', time: util.formatDateTime()
     };
@@ -1209,7 +1209,7 @@ Page({
     var isTimeoutError = /超时|timeout|timed out|ECONNABORTED/i.test(message);
     if (isTimeoutError) {
       wx.showModal({
-        title: 'AI 分析超时',
+        title: '智能分析超时',
         content: message + '\n\n系统已自动结束本次等待。请在云开发控制台查看 ai-analyze 日志后重试。',
         showCancel: false,
         confirmText: '知道了'
@@ -1219,7 +1219,7 @@ Page({
     var isConfigurationError = /缺少 API 地址或 API Key|FunctionName parameter could not be found|FUNCTION_NOT_FOUND/i.test(message);
     if (isConfigurationError) {
       wx.showModal({
-        title: '真实AI尚未配置',
+        title: '智能服务尚未配置',
         content: 'API Key需要配置在 ai-analyze 云函数环境变量中。你可以先切换到演示模式继续体验完整检测流程。',
         cancelText: '暂不切换',
         confirmText: '演示模式',
@@ -1235,7 +1235,7 @@ Page({
       return;
     }
     wx.showModal({
-      title: 'AI 分析失败',
+      title: '智能分析失败',
       content: message + '\n\n请检查网络、云函数部署和模型配置后重试。',
       showCancel: false,
       confirmText: '知道了'
@@ -1381,14 +1381,7 @@ Page({
   },
 
   onShareAppMessage: function () {
-    if (!this.data.rectificationOrderId || !this.data.rectificationShareToken) {
-      return { title: 'ESP AI质检', path: '/pages/inspect/inspect' };
-    }
-    var projectId = app.getV3State().project.id;
-    return {
-      title: '整改协作单 ' + this.data.rectificationOrderNo + '｜点击上传整改照片并闭环',
-      path: '/pages/rectification-detail/rectification-detail?id=' + encodeURIComponent(this.data.rectificationOrderId) + '&projectId=' + encodeURIComponent(projectId) + '&token=' + encodeURIComponent(this.data.rectificationShareToken) + '&from=share'
-    };
+    return require('../../utils/share.js').home();
   },
 
   editResults: function () {
@@ -1399,7 +1392,7 @@ Page({
     }
 
     wx.showModal({
-      title: '复核AI草稿',
+      title: '复核智能检测草稿',
       content: '请逐条使用“编辑”修正描述和等级，使用“误报”删除错误结果，必要时补充漏检。完成后点击“确认并提交”。',
       showCancel: false,
       confirmText: '开始复核'

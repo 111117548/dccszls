@@ -4,7 +4,7 @@
   <!-- Header -->
   <view class="batch-header">
     <view class="batch-title">批量巡检</view>
-    <view class="batch-subtitle">上传多张照片，批量AI缺陷检测</view>
+    <view class="batch-subtitle">上传多张照片，批量智能缺陷检测</view>
   </view>
 
   <view class="demo-notice" wx:if="{{isDemoMode}}">
@@ -20,7 +20,7 @@
     <button class="upload-area" bindtap="choosePhotos" wx:if="{{photos.length < maxPhotos}}" hover-class="ux-press">
       <view class="upload-icon">📷</view>
       <text class="upload-text">点击上传照片（{{photos.length}}/{{maxPhotos}}）</text>
-      <text class="upload-hint">支持多张选择，每张将逐一AI分析</text>
+      <text class="upload-hint">支持多张选择，每张将逐一智能分析</text>
     </button>
   </view>
 
@@ -61,7 +61,7 @@
   <view wx:if="{{analysisDone}}">
 
     <view class="batch-review-state {{batchCommitted ? 'committed' : 'draft'}}">
-      <text>{{batchCommitted ? 'CONFIRMED RECORD' : (isDemoMode ? 'DEMO REVIEW' : 'AI REVIEW DRAFT')}}</text>
+      <text>{{batchCommitted ? 'CONFIRMED RECORD' : (isDemoMode ? 'DEMO REVIEW' : '智能复核草稿')}}</text>
       <view>{{batchCommitted ? '人工复核完成，批量记录已提交' : (isDemoMode ? '演示结果仅用于体验，不写入正式台账' : '批量分析结果为草稿，请逐条复核后提交')}}</view>
     </view>
 

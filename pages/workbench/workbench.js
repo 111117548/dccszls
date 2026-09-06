@@ -1,6 +1,8 @@
 var app = getApp();
 
 Page({
+  onShareAppMessage: function () { return require('../../utils/share.js').home(); },
+
   data: {
     projectName: '',
     deviceName: '',
@@ -8,10 +10,12 @@ Page({
     tools: [
       { action: 'arrival', name: '到货管理', caption: '清单与预警', icon: '/assets/icon-review-v1/12-crane-lifting.svg' },
       { action: 'progress', name: '安装进度', caption: '现场进度', icon: '/assets/icon-review-v1/10-construction-helmet.svg' },
-      { action: 'ai', name: 'AI质量检查', caption: '拍照识别', icon: '/assets/icon-review-v1/09-engineering-inspection.svg' },
-      { action: 'rectification', name: '整改闭环', caption: '跟踪复验', icon: '/assets/icon-review-v1/11-welding.svg' },
+      { action: 'smartInspection', name: '智能检测', caption: '拍照识别与缺陷确认', icon: '/assets/icon-review-v1/09-engineering-inspection.svg' },
+      { action: 'qualityLedger', name: '质量检查台账', caption: '整改任务与复验闭环', icon: '/assets/icon-review-v1/07-rapping-system.svg' },
       { action: 'records', name: '检验记录', caption: '填写与归档', icon: '/assets/icon-review-v1/05-collecting-plate.svg' },
-      { action: 'feishu', name: '飞书协同', caption: '同步整改', icon: '/assets/icon-review-v1/01-esp-unit.svg' }
+      { action: 'daily', name: '施工日报', caption: '今日施工与明日计划', icon: '/assets/icon-review-v1/11-welding.svg' },
+      { action: 'frameAssembly', name: '拼框管理', caption: '正在开发中', icon: '/assets/icon-review-v1/02-electric-field.svg' },
+      { action: 'nanoCoating', name: '纳米涂层检验', caption: '正在开发中', icon: '/assets/icon-review-v1/03-ash-hopper.svg' }
     ]
   },
 
@@ -30,10 +34,12 @@ Page({
     var routes = {
       arrival: '/pages/arrival-srm/arrival-srm',
       progress: '/pages/construction-progress/construction-progress?stageIndex=' + this.data.stageIndex + '&source=workbench',
-      ai: '/pages/inspect/inspect',
-      rectification: '/pages/history/history?tab=rectification',
+      smartInspection: '/pages/inspect/inspect',
+      qualityLedger: '/pages/history/history?tab=rectification',
       records: '/pages/process-records/process-records',
-      feishu: '/pages/history/history?tab=rectification&source=feishu'
+      daily: '/pages/report-center/report-center',
+      frameAssembly: '/pages/feature-coming-soon/feature-coming-soon?feature=frameAssembly',
+      nanoCoating: '/pages/feature-coming-soon/feature-coming-soon?feature=nanoCoating'
     };
     if (routes[action]) wx.navigateTo({ url: routes[action] });
   }

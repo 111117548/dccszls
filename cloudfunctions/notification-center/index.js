@@ -274,11 +274,12 @@ function deviceNameMap(foundation) {
   return map;
 }
 
-const FORECAST_DEPENDENCIES = [
+const stageCatalog = require('./stage-catalog');
+const LEGACY_FORECAST_DEPENDENCIES = [
   [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [5, 7], [5, 8],
   [8, 9], [9, 10], [10, 11], [11, 12], [12, 13]
 ];
-const FORECAST_STAGE_NAMES = ['支座', '基础梁', '钢支架', '灰斗', '壳体', '进出口', '阳极系统', '阴极系统', '振打系统', '高压设备', '平台扶梯', '电气仪表', '调试验收'];
+const LEGACY_FORECAST_STAGE_NAMES = ['支座', '基础梁', '钢支架', '灰斗', '壳体', '进出口', '阳极系统', '阴极系统', '振打系统', '高压设备', '平台扶梯', '电气仪表', '调试验收'];
 
 function percent(value, total) {
   total = Number(total || 0);
@@ -305,12 +306,16 @@ function projectedDispatchAlerts(foundation, parts, names) {
   Object.keys(foundation.deviceStates || {}).forEach(function (deviceId) {
     const state = foundation.deviceStates[deviceId] || {};
     const metrics = state.stageMetrics || {};
-    FORECAST_DEPENDENCIES.forEach(function (pair) {
+    const currentCatalog = state.stageSchemaVersion === stageCatalog.VERSION;
+    const dependencies = currentCatalog ? stageCatalog.DEPENDENCIES.map(function (item) { return [item.sourceIndex, item.targetIndex]; }) : LEGACY_FORECAST_DEPENDENCIES;
+    const stageNames = currentCatalog ? stageCatalog.STAGES.map(function (item) { return item.shortName; }) : LEGACY_FORECAST_STAGE_NAMES;
+    function stageId(index) { return currentCatalog ? stageCatalog.STAGES[index - 1].id : 'stage-' + String(index).padStart(2, '0'); }
+    dependencies.forEach(function (pair) {
       const sourceIndex = pair[0];
       const targetIndex = pair[1];
       if (Number(state.actualStageIndex || 1) !== sourceIndex) return;
-      const source = metrics['stage-' + String(sourceIndex).padStart(2, '0')] || {};
-      const target = metrics['stage-' + String(targetIndex).padStart(2, '0')] || {};
+      const source = metrics[stageId(sourceIndex)] || {};
+      const target = metrics[stageId(targetIndex)] || {};
       const progress = projectedInstallProgress(source, parts.date);
       const prepare = Math.max(50, Math.min(95, Number(source.warningPreparePercent == null ? 75 : source.warningPreparePercent)));
       const dispatch = Math.max(prepare, Math.min(100, Number(source.warningDispatchPercent == null ? 80 : source.warningDispatchPercent)));
@@ -320,11 +325,12 @@ function projectedDispatchAlerts(foundation, parts, names) {
       if (supply >= 100 || progress < prepare) return;
       const urgent = progress >= dispatch;
       results.push({
-        key: (urgent ? 'ratio-dispatch:' : 'ratio-prepare:') + 'stage-' + String(sourceIndex).padStart(2, '0') + ':stage-' + String(targetIndex).padStart(2, '0'),
+        key: (urgent ? 'ratio-dispatch:' : 'ratio-prepare:') + stageId(sourceIndex) + ':' + stageId(targetIndex),
         type: 'ratio', level: urgent ? 'orange' : 'yellow', levelName: urgent ? '预警' : '关注',
         sourceIndex: sourceIndex, targetIndex: targetIndex,
-        title: (urgent ? '请安排' : '提前准备') + FORECAST_STAGE_NAMES[targetIndex - 1] + '发货',
-        message: FORECAST_STAGE_NAMES[sourceIndex - 1] + (source.progressMode === 'forecast' ? '预测' : '实际') + '进度' + progress + '%，' + FORECAST_STAGE_NAMES[targetIndex - 1] + (targetPlan > 0 ? '到货覆盖率' : '发货完成率') + supply + '%。',
+        targetStageId: stageCatalog.canonicalId(stageId(targetIndex)),
+        title: (urgent ? '请安排' : '提前准备') + stageNames[targetIndex - 1] + '发货',
+        message: stageNames[sourceIndex - 1] + (source.progressMode === 'forecast' ? '预测' : '实际') + '进度' + progress + '%，' + stageNames[targetIndex - 1] + (targetPlan > 0 ? '到货覆盖率' : '发货完成率') + supply + '%。',
         threshold: urgent ? dispatch : prepare, calculatedValue: progress,
         occurrenceCount: 1, updatedAt: Date.now(), deviceId: deviceId, deviceName: names[deviceId] || deviceId
       });
@@ -349,7 +355,11 @@ async function processDispatch(subscription, parts) {
       const key = deviceId + ':' + (alert.key || alert.id || alert.title) + ':' + Number(alert.occurrenceCount || 1);
       if (sentKeys.indexOf(key) !== -1) return;
       queuedKeys[key] = true;
-      alerts.push(Object.assign({}, alert, { notificationKey: key, deviceId: deviceId, deviceName: names[deviceId] || deviceId }));
+      const targetIndex = Number(alert.targetIndex || alert.sourceIndex || 1);
+      const targetStageId = state.stageSchemaVersion === stageCatalog.VERSION
+        ? (stageCatalog.STAGES[targetIndex - 1] || stageCatalog.STAGES[0]).id
+        : stageCatalog.canonicalId('stage-' + String(targetIndex).padStart(2, '0'));
+      alerts.push(Object.assign({}, alert, { targetStageId: targetStageId, notificationKey: key, deviceId: deviceId, deviceName: names[deviceId] || deviceId }));
     });
   });
   projectedDispatchAlerts(foundation, parts, names).forEach(function (alert) {
@@ -368,7 +378,7 @@ async function processDispatch(subscription, parts) {
     name3: { value: fitName(subscription.recipientName, '项目负责人') },
     thing36: { value: fitThing(alerts.length > 1 ? (alert.deviceName + '等' + alerts.length + '项需催发货') : (alert.message || '请及时安排发货'), '请及时安排发货') },
     time33: { value: parts.dateTime }
-  }, 'pages/construction-progress/construction-progress?stageIndex=' + encodeURIComponent(alert.targetIndex || alert.sourceIndex || 1) + '&source=notification', {
+  }, 'pages/construction-progress/construction-progress?stageId=' + encodeURIComponent(alert.targetStageId || '') + '&stageIndex=' + encodeURIComponent(alert.targetIndex || alert.sourceIndex || 1) + '&source=notification', {
     sentDispatchKeys: nextKeys,
     lastDispatchKey: alert.notificationKey,
     lastDispatchDate: parts.date

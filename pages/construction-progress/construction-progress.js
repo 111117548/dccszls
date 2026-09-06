@@ -1,4 +1,5 @@
 var app = getApp();
+var arrivalImport = require('../../utils/arrival-import.js');
 
 function numberValue(value) {
   var parsed = Number(value);
@@ -25,20 +26,25 @@ function dateAfter(days) {
 }
 
 Page({
+  onShareAppMessage: function () { return require('../../utils/share.js').home(); },
+
   data: {
     stageIndex: 1,
     projectName: '', deviceName: '', stage: {}, metric: {},
     isCurrentStage: true, canManage: false, hasManifest: false,
-    demandValue: 0, arrivalValue: 0, installedValue: 0, summaryUnit: '箱', summarySource: '',
+    demandValue: 0, arrivalValue: 0, arrivalProgress: 0, installedValue: 0, summaryUnit: '箱', summarySource: '',
     actualProgress: 0, displayProgress: 0, progressKind: '实际', mode: 'actual',
     form: { actualProgress: 0, dailyPercent: 5, preparePercent: 75, dispatchPercent: 80 },
     projection: {}, nextStageName: '', warning: {}, activeRatioAlert: null,
-    correctionOpen: false, correctionForm: { demand: '', arrival: '', unit: '箱' },
-    saving: false, handlingAlert: false
+    arrivalMode: 'manual', arrivalForm: { quantity: '' }, arrivalImporting: false, arrivalProgressText: '',
+    saving: false, arrivalSaving: false, handlingAlert: false
   },
 
   onLoad: function (options) {
-    this.setData({ stageIndex: Math.max(1, Math.min(13, Number(options.stageIndex) || 1)) });
+    options = options || {};
+    var catalog = require('../../utils/stage-catalog');
+    var stage = catalog.STAGES.find(function (item) { return item.id === catalog.canonicalId(options.stageId); });
+    this.setData({ stageIndex: stage ? stage.index : Math.max(1, Math.min(13, Number(options.stageIndex) || 1)) });
   },
 
   onShow: function () { this.loadProgress(); },
@@ -48,11 +54,12 @@ Page({
     var detail = app.getConstructionProgress(this.data.stageIndex);
     var metric = detail.metric || {};
     var projection = detail.analytics && detail.analytics.projection || {};
-    var override = metric.summaryOverrideEnabled && Number(metric.summaryDemandQuantity || 0) > 0;
-    var manifest = !override && Number(metric.manifestPlannedPackages || 0) > 0;
+    var manifest = Number(metric.manifestPlannedPackages || 0) > 0;
+    var override = !manifest && metric.summaryOverrideEnabled && Number(metric.summaryDemandQuantity || 0) > 0;
     var demand = override ? Number(metric.summaryDemandQuantity || 0) : manifest ? Number(metric.manifestPlannedPackages || 0) : Number(metric.plannedQuantity || 0);
     var arrival = override ? Number(metric.summaryArrivalQuantity || 0) : manifest ? Number(metric.manifestArrivedPackages || 0) : Number(metric.arrivedQuantity || 0);
-    var unit = override ? (metric.summaryUnit || '箱') : manifest ? '箱' : (detail.stage.unit || '件');
+    var arrivalProgress = demand > 0 ? Math.round(arrival / demand * 1000) / 10 : 0;
+    var unit = override ? (metric.summaryUnit || '箱') : manifest ? '箱' : (metric.unit || detail.stage.unit || '件');
     var actualProgress = Number(projection.actualProgress || detail.installedProgress || 0);
     var displayProgress = projection.mode === 'forecast' ? Number(projection.projectedProgress || actualProgress) : actualProgress;
     var installedValue = Math.round(demand * actualProgress) / 100;
@@ -69,7 +76,7 @@ Page({
       stage: detail.stage || {}, metric: metric,
       isCurrentStage: Number(context.stage.index) === Number(this.data.stageIndex),
       canManage: app.canEditCurrentProject(), hasManifest: manifest,
-      demandValue: fixed(demand, 1), arrivalValue: fixed(arrival, 1), installedValue: fixed(installedValue, 1),
+      demandValue: fixed(demand, 1), arrivalValue: fixed(arrival, 1), arrivalProgress: arrivalProgress, installedValue: fixed(installedValue, 1),
       summaryUnit: unit, summarySource: override ? '人工校正' : manifest ? '需求总清单' : '阶段计划',
       actualProgress: actualProgress, displayProgress: displayProgress,
       progressKind: projection.mode === 'forecast' ? '预测' : '实际', mode: projection.mode || 'actual',
@@ -80,7 +87,7 @@ Page({
         preparePercent: fixed(metric.warningPreparePercent == null ? 75 : metric.warningPreparePercent, 0),
         dispatchPercent: fixed(metric.warningDispatchPercent == null ? 80 : metric.warningDispatchPercent, 0)
       },
-      correctionForm: { demand: fixed(demand, 1), arrival: fixed(arrival, 1), unit: unit }
+      arrivalForm: { quantity: fixed(arrival, 0) }
     });
   },
 
@@ -167,43 +174,69 @@ Page({
     }
   },
 
-  toggleCorrection: function () {
-    if (!this.data.isCurrentStage || !this.data.canManage) {
-      wx.showToast({ title: this.data.isCurrentStage ? '当前项目仅可查看' : '只能调整当前施工部件', icon: 'none' });
-      return;
-    }
-    this.setData({ correctionOpen: !this.data.correctionOpen });
+  switchArrivalMode: function (event) {
+    if (!this.data.canManage || !this.data.hasManifest) return;
+    this.setData({ arrivalMode: event.currentTarget.dataset.mode === 'import' ? 'import' : 'manual' });
   },
 
-  onCorrectionInput: function (event) {
-    var changes = {};
-    changes['correctionForm.' + event.currentTarget.dataset.field] = event.detail.value;
-    this.setData(changes);
-  },
-
-  saveCorrection: function () {
-    var demand = numberValue(this.data.correctionForm.demand);
-    var arrival = numberValue(this.data.correctionForm.arrival);
-    if (demand <= 0 || arrival < 0 || arrival > demand) {
-      wx.showToast({ title: '请检查需求和到货数量', icon: 'none' });
-      return;
-    }
-    var saved = app.updateConstructionProgress(this.data.stageIndex, {
-      summaryOverrideEnabled: true, summaryDemandQuantity: demand, summaryArrivalQuantity: arrival,
-      summaryUnit: this.data.correctionForm.unit || '箱', note: '人工校正需求与到货汇总'
+  onArrivalInput: function (event) {
+    var quantity = Number(event.detail.value);
+    var demand = Number(this.data.demandValue || 0);
+    this.setData({
+      'arrivalForm.quantity': event.detail.value,
+      arrivalProgress: isFinite(quantity) && demand > 0 ? Math.max(0, Math.min(100, Math.round(quantity / demand * 1000) / 10)) : 0
     });
-    if (!saved) return;
-    this.setData({ correctionOpen: false });
-    this.loadProgress();
-    wx.showToast({ title: '汇总数量已校正', icon: 'success' });
   },
 
-  restoreManifest: function () {
-    var saved = app.updateConstructionProgress(this.data.stageIndex, { summaryOverrideEnabled: false, note: '恢复使用需求总清单汇总' });
-    if (!saved) return;
-    this.setData({ correctionOpen: false });
-    this.loadProgress();
-    wx.showToast({ title: '已恢复清单数据', icon: 'success' });
+  saveArrivalQuantity: function () {
+    if (this.data.arrivalSaving || !this.data.canManage || !this.data.hasManifest) return;
+    var quantity = Number(this.data.arrivalForm.quantity);
+    var demand = Number(this.data.demandValue || 0);
+    if (!isFinite(quantity) || quantity < 0 || Math.floor(quantity) !== quantity || quantity > demand) {
+      wx.showToast({ title: '到货数量应为0—' + demand + '箱的整数', icon: 'none' });
+      return;
+    }
+    this.setData({ arrivalSaving: true });
+    try {
+      var saved = app.updateStageArrivalQuantity(this.data.stageIndex, quantity);
+      this.setData({ arrivalSaving: false });
+      if (!saved) return;
+      this.loadProgress();
+      wx.showToast({ title: '到货数量已汇总', icon: 'success' });
+    } catch (error) {
+      this.setData({ arrivalSaving: false });
+      this.loadProgress();
+      wx.showModal({ title: '保存失败', content: error.message || '请检查到货数量', showCancel: false });
+    }
+  },
+
+  importArrivalFile: function () {
+    var self = this;
+    if (this.data.arrivalImporting || !this.data.canManage || !this.data.hasManifest) return;
+    this.setData({ arrivalImporting: true, arrivalProgressText: '请选择实际到货清单…' });
+    arrivalImport.chooseAndParse({
+      type: 'arrival', context: app.getFoundationContext(),
+      onProgress: function (text) { self.setData({ arrivalProgressText: text }); }
+    }).then(function (parsed) {
+      var detail = app.importArrivalReceiptManifest(parsed);
+      if (!detail) throw new Error('当前账号没有编辑该项目的权限');
+      self.setData({ arrivalImporting: false, arrivalProgressText: '' });
+      self.loadProgress();
+      var imported = detail.lastImport || {};
+      var vehicleText = Number(imported.vehicleCount || 0) > 1 ? '识别 ' + Number(imported.vehicleCount) + ' 车、' : '';
+      var breakdown = (imported.stageBreakdown || []).filter(function (item) { return Number(item.matchedPackages || 0) > 0; });
+      var breakdownText = breakdown.length ? '\n\n部件归类：\n' + breakdown.map(function (item) {
+        return item.stageName + ' ' + Number(item.matchedPackages || 0) + '箱';
+      }).join('；') : '';
+      wx.showModal({
+        title: '到货清单已计入台账',
+        content: vehicleText + '读取 ' + Number(imported.packageCount || 0) + ' 个实际箱件；匹配需求 ' + Number(imported.matchedDemandPackages || imported.matchedPackages || 0) + ' 箱，新增到货 ' + Number(imported.addedPackages || 0) + ' 箱；拆分箱归并 ' + Number(imported.consolidatedPackages || 0) + ' 个，重复 ' + Number(imported.duplicatePackages || 0) + ' 个，未匹配 ' + Number(imported.unmatchedPackages || 0) + ' 个。' + breakdownText,
+        showCancel: false
+      });
+    }).catch(function (error) {
+      self.setData({ arrivalImporting: false, arrivalProgressText: '' });
+      arrivalImport.showPickerError(error, '实际到货清单');
+    });
   },
 
   setAsCurrentStage: function () {

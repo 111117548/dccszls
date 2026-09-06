@@ -2,6 +2,8 @@ var app = getApp();
 var notificationCenter = require('../../utils/notification-center.js');
 
 Page({
+  onShareAppMessage: function () { return require('../../utils/share.js').home(); },
+
   data: {
     services: [], summary: { total: 0, normal: 0, warning: 0 },
     isAdmin: false, checking: false, showDetail: false, selectedService: {}
@@ -15,7 +17,7 @@ Page({
     var services = [
       { id: 'feishu', icon: '飞', name: '飞书开放平台', purpose: '项目、整改与通讯录同步', status: identity.bound ? 'normal' : 'warning', statusText: identity.bound ? '正常' : '未绑定', lastText: identity.bound ? '账号授权有效' : '需要完成飞书授权', environment: '生产环境', secretText: '云端加密保存' },
       { id: 'wechat', icon: '微', name: '微信订阅消息', purpose: '到货预警与整改催办', status: typeof wx.requestSubscribeMessage === 'function' ? 'normal' : 'warning', statusText: typeof wx.requestSubscribeMessage === 'function' ? '正常' : '不支持', lastText: '模板由云函数环境变量管理', environment: '生产环境', secretText: '模板ID已脱敏' },
-      { id: 'ai', icon: 'AI', name: 'AI图像识别服务', purpose: '施工照片质量分析', status: cloudReady ? 'checking' : 'warning', statusText: cloudReady ? '检测中' : '不可用', lastText: '正在检查云端配置', environment: '生产环境', secretText: 'API Key仅云端可见' },
+      { id: 'ai', icon: '智', name: '智能图像识别服务', purpose: '施工照片质量分析', status: cloudReady ? 'checking' : 'warning', statusText: cloudReady ? '检测中' : '不可用', lastText: '正在检查云端配置', environment: '生产环境', secretText: '接口密钥仅云端可见' },
       { id: 'manifest', icon: '表', name: '到货清单解析服务', purpose: 'Excel需求与到货清单解析', status: cloudReady ? 'normal' : 'warning', statusText: cloudReady ? '可调用' : '不可用', lastText: 'arrival-manifest 云函数', environment: '生产环境', secretText: '无需客户端密钥' },
       { id: 'storage', icon: '云', name: '云存储服务', purpose: '整改照片与报告文件', status: wx.cloud ? 'normal' : 'warning', statusText: wx.cloud ? '正常' : '不可用', lastText: wx.cloud ? '云环境已初始化' : '当前基础库不支持', environment: '生产环境', secretText: '平台托管' }
     ];
@@ -50,7 +52,7 @@ Page({
       self.setService('ai', {
         status: result.success && result.configured ? 'normal' : 'warning',
         statusText: result.success && result.configured ? '正常' : '待配置',
-        lastText: result.success && result.configured ? '云端AI服务已就绪' : '请管理员配置云函数环境变量'
+        lastText: result.success && result.configured ? '云端智能服务已就绪' : '请管理员配置云函数环境变量'
       });
     }).catch(function () { self.setService('ai', { status: 'warning', statusText: '异常', lastText: '状态检测失败，请查看云函数日志' }); });
   },

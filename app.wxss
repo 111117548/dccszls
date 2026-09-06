@@ -1,53 +1,54 @@
-/* V6.0 · Zijin Longking enterprise engineering visual system */
+/* V8.0 · Ant Design Mobile inspired engineering design system */
 page {
-  --bg: #f4f7fb;
-  --bg-deep: #edf2f8;
+  --bg: #f5f5f5;
+  --bg-deep: #f0f0f0;
   --panel: #ffffff;
   --panel-strong: #ffffff;
-  --panel-soft: #f7f9fc;
-  --line: #d6e0eb;
-  --line-soft: #e8eef5;
-  --blue: #0b4aa2;
-  --blue-bright: #1467c9;
+  --panel-soft: #fafafa;
+  --line: #e5e5e5;
+  --line-soft: #f0f0f0;
+  --blue: #1677ff;
+  --blue-bright: #4096ff;
   --cyan: #178bd6;
   --green: #16845b;
   --yellow: #d78b00;
   --red: #d7393f;
   --purple: #7754b3;
-  --brand: #0b4aa2;
-  --brand-2: #1467c9;
-  --brand-soft: #eef5ff;
+  --brand: #1677ff;
+  --brand-2: #4096ff;
+  --brand-soft: #e6f4ff;
   --success: #16845b;
   --success-soft: #eef8f3;
   --warning: #d78b00;
   --warning-soft: #fff7e7;
   --danger: #d7393f;
   --danger-soft: #fff0f1;
-  --text: #172437;
-  --text-2: #5d6b7c;
-  --text-3: #8793a2;
-  --color-primary: #0b4aa2;
-  --color-primary-pressed: #083b82;
+  --text: #1f1f1f;
+  --text-2: #595959;
+  --text-3: #8c8c8c;
+  --color-primary: #1677ff;
+  --color-primary-pressed: #0958d9;
   --color-info: #178bd6;
   --color-success: #16845b;
   --color-warning: #d78b00;
   --color-error: #d7393f;
-  --text-primary: #172437;
-  --text-secondary: #5d6b7c;
-  --text-tertiary: #8793a2;
-  --text-disabled: #a3adba;
-  --border-strong: #bdcad8;
-  --border-default: #d6e0eb;
-  --border-subtle: #e8eef5;
-  --radius-sm: 6rpx;
-  --radius-md: 10rpx;
-  --shadow-sm: 0 8rpx 24rpx rgba(23, 50, 78, .06);
+  --text-primary: #1f1f1f;
+  --text-secondary: #595959;
+  --text-tertiary: #8c8c8c;
+  --text-disabled: #bfbfbf;
+  --border-strong: #d9d9d9;
+  --border-default: #e5e5e5;
+  --border-subtle: #f0f0f0;
+  --radius-sm: 8rpx;
+  --radius-md: 16rpx;
+  --radius-lg: 24rpx;
+  --shadow-sm: 0 4rpx 16rpx rgba(0, 0, 0, .04);
   min-height: 100%;
   background: var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 28rpx;
-  line-height: 1.55;
+  line-height: 1.5;
 }
 
 /* Compact shared brand header used outside the model-first homepage. */
@@ -109,7 +110,7 @@ input, textarea { color: var(--text); caret-color: var(--blue); }
 .section-title { position: relative; display: block; margin: 34rpx 30rpx 20rpx; padding-bottom: 12rpx; color: var(--text); font-size: 32rpx; font-weight: 700; }
 .section-title::after { position: absolute; left: 0; bottom: 0; width: 42rpx; height: 4rpx; background: var(--blue); content: ""; }
 
-.primary-btn { color: #fff; background: linear-gradient(135deg, #0b4aa2, #1467c9); border: 1rpx solid #0b4aa2; box-shadow: 0 6rpx 16rpx rgba(11,74,162,.16); }
+.primary-btn { color: #fff; background: #1677ff; border: 1rpx solid #1677ff; box-shadow: none; }
 .outline-btn { color: var(--blue); background: #fff; border: 2rpx solid var(--blue); }
 .warning-btn { color: #fff; background: #d78b00; border: 1rpx solid #c47e00; }
 .success-btn { color: #fff; background: #16845b; border: 1rpx solid #126f4c; }
@@ -143,3 +144,70 @@ input, textarea { color: var(--text); caret-color: var(--blue); }
   .panel { margin-left: 22rpx; margin-right: 22rpx; padding: 22rpx; }
   .bottom-sheet { padding-left: 24rpx; padding-right: 24rpx; }
 }
+
+/* Shared mobile primitives: keep every page visually predictable. */
+.shared-brand-bar {
+  min-height: 96rpx;
+  margin-bottom: 0;
+  padding: 14rpx 28rpx;
+  border-color: var(--line-soft);
+}
+.shared-brand-bar > image { width: 250rpx; height: 58rpx; flex-basis: 250rpx; }
+.shared-brand-bar text { color: var(--text); font-size: 21rpx; font-weight: 600; }
+.shared-brand-bar label { color: var(--text-3); font-size: 14rpx; }
+
+.brand-bar { min-height: 96rpx; padding: 14rpx 28rpx; }
+.brand-logo { width: 250rpx; height: 60rpx; }
+.brand-meta text { font-size: 21rpx; font-weight: 600; }
+.brand-meta label { color: var(--text-3); font-size: 15rpx; }
+
+.context-bar { min-height: 82rpx; padding: 0 28rpx; }
+.context-bar .context-name { color: var(--text-2); font-size: 24rpx; }
+
+.page-hero {
+  margin: 24rpx 24rpx 20rpx;
+  padding: 26rpx 24rpx;
+  border: 0;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.page-hero-title { font-size: 36rpx; font-weight: 700; letter-spacing: 0; }
+.page-hero-subtitle { margin-top: 8rpx; color: var(--text-3); font-size: 22rpx; letter-spacing: 0; }
+
+.panel {
+  margin: 0 24rpx 20rpx;
+  padding: 24rpx;
+  border-color: var(--line-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.section-title {
+  margin: 32rpx 28rpx 16rpx;
+  padding: 0;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+.section-title::after { display: none; }
+
+button { min-height: 80rpx; border-radius: var(--radius-md); }
+.outline-btn { color: var(--blue); border: 1rpx solid #91caff; }
+.warning-btn { background: #fa8c16; border-color: #fa8c16; }
+.danger-btn { color: #ff4d4f; border-width: 1rpx; border-color: #ff7875; }
+.field {
+  min-height: 88rpx;
+  border-color: var(--line);
+  border-radius: var(--radius-md);
+  background: #fafafa;
+}
+.field:focus { border-color: #69b1ff; background: #fff; }
+
+.sheet-mask { background: rgba(0, 0, 0, .45); }
+.bottom-sheet {
+  padding-top: 16rpx;
+  border: 0;
+  border-radius: 32rpx 32rpx 0 0;
+  box-shadow: 0 -16rpx 48rpx rgba(0, 0, 0, .12);
+}
+.sheet-handle { background: #d9d9d9; }
+.sheet-head text { font-size: 32rpx; font-weight: 700; }
+.sheet-head button { border-color: #91caff; border-radius: 12rpx; }

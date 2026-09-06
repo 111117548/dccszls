@@ -12,8 +12,8 @@
     <view class="certification-notice">
       <view class="notice-icon">!</view>
       <view class="notice-copy">
-        <text>分享页面已经就绪</text>
-        <label>当前未认证时可预览完整流程；完成小程序认证后，“转发给微信好友”即可直接使用。</label>
+        <text>分享前须知</text>
+        <label>云端任务确认就绪后才能转发。分享小程序请到“我的”；分享整改任务请使用本页按钮。</label>
       </view>
     </view>
 
@@ -56,7 +56,7 @@
     </view>
 
     <button class="share-primary" open-type="share" disabled="{{!cloudReady}}">{{cloudReady ? '转发给微信好友' : '等待云端协作就绪'}}</button>
-    <button class="preview-button" bindtap="previewRecipient">预览被分享人整改页面</button>
+    <button class="preview-button" bindtap="previewRecipient" disabled="{{!cloudReady}}">预览被分享人整改页面</button>
     <button class="copy-button" bindtap="copyTaskInfo">复制整改任务信息</button>
     <button class="task-link" bindtap="openTask">返回查看整改任务</button>
 

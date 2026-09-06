@@ -1,8 +1,10 @@
 <view class="screen profile-screen">
   <view class="shared-brand-bar"><image src="/images/brand/zijin-longking-horizontal.png" mode="aspectFit" aria-label="紫金龙净"></image><view><text>工程质量数字化平台</text><label>ENGINEERING QUALITY</label></view></view>
+  <view class="profile-heading"><text>我的</text><label>账号、协同与系统设置</label></view>
   <view class="profile-card">
     <view class="profile-avatar">{{identity.bound ? '飞' : '我'}}</view>
     <view class="profile-copy"><text>{{userName}}</text><label>{{roleName}}{{isAdmin ? ' · 管理员' : ''}}</label><label class="profile-project">当前项目：{{projectName}}</label></view>
+    <text class="profile-bound {{identity.bound ? 'active' : ''}}">{{identity.bound ? '已绑定' : '未绑定'}}</text>
   </view>
 
   <view class="profile-group">
@@ -14,7 +16,6 @@
   <view class="profile-group">
     <text class="profile-group-title">系统与集成</text>
     <view class="profile-row" bindtap="goApi" hover-class="profile-row-press"><text class="profile-icon">API</text><view><text>API接口管理</text><label>{{isAdmin ? '查看状态并管理接口配置' : '查看接口运行状态'}}</label></view><label class="profile-status {{apiStatusClass}}">{{apiStatusText}}</label><text class="profile-arrow">›</text></view>
-    <view class="profile-row" bindtap="goLogs" hover-class="profile-row-press"><text class="profile-icon">志</text><view><text>同步与任务日志</text><label>查看报告、资料和同步结果</label></view><text class="profile-arrow">›</text></view>
     <view class="profile-row" bindtap="showPermissions" hover-class="profile-row-press"><text class="profile-icon">权</text><view><text>权限与角色</text><label>查看当前账号的数据权限</label></view><text class="profile-arrow">›</text></view>
   </view>
 

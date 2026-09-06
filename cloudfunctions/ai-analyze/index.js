@@ -44,7 +44,7 @@ async function getSampleContext(areaKey, limit, scope) {
     samples = rankSamples(samples, scope, limit);
 
     if (samples.length === 0) {
-      return '（暂无历史样本。随着用户确认更多缺陷，AI将参考历史样本越用越精准。）';
+      return '（暂无历史样本。随着用户确认更多缺陷，智能检测将参考历史样本持续优化。）';
     }
 
     var lines = samples.map(function (s, i) {
@@ -76,7 +76,7 @@ async function getFalsePositiveContext(areaKey, limit, scope) {
     if (samples.length === 0) return '';
 
     var lines = samples.map(function (s, i) {
-      return '误报' + (i + 1) + '：' + (s.name || '') + ' — 原因：' + (s.falsePositiveReason || 'AI误判');
+      return '误报' + (i + 1) + '：' + (s.name || '') + ' — 原因：' + (s.falsePositiveReason || '智能检测误判');
     });
     return '\n【注意：以下是过去的误报案例，请避免重复误报】\n' + lines.join('\n');
   } catch (err) {
@@ -99,7 +99,7 @@ async function getMissedDefectContext(areaKey, limit, scope) {
     var lines = samples.map(function (s, i) {
       return '漏检' + (i + 1) + '：' + (s.name || '') + ' — ' + (s.description || '用户人工补录');
     });
-    return '\n【注意：以下缺陷曾被AI漏检，请重点核查】\n' + lines.join('\n');
+    return '\n【注意：以下缺陷曾被智能检测漏检，请重点核查】\n' + lines.join('\n');
   } catch (err) {
     return '';
   }
@@ -121,7 +121,7 @@ function validateEndpoint(endpoint) {
 function clamp(value, min, max) { value = Number(value); if (!Number.isFinite(value)) value = min; return Math.max(min, Math.min(max, value)); }
 function text(value, max) { return typeof value === 'string' ? value.slice(0, max || 1000) : ''; }
 function normalizeAIResult(result, analysisType) {
-  if (!result || typeof result !== 'object' || Array.isArray(result)) throw new Error('AI JSON根节点必须是对象');
+  if (!result || typeof result !== 'object' || Array.isArray(result)) throw new Error('智能检测结果根节点必须是对象');
   if (analysisType === 'quality') {
     var q = result.quality && typeof result.quality === 'object' ? result.quality : {};
     var quality = {
@@ -257,7 +257,7 @@ exports.main = async (event, context) => {
     return { success: false, error: '缺少 API 地址或 API Key' };
   }
   if (!validateEndpoint(effectiveEndpoint)) {
-    return { success: false, error: 'AI API 地址无效或不符合安全策略（必须使用公网 HTTPS）' };
+    return { success: false, error: '智能服务地址无效或不符合安全策略（必须使用公网 HTTPS）' };
   }
   if (!imageFileID) {
     return { success: false, error: '缺少图片 fileID' };
@@ -353,7 +353,7 @@ exports.main = async (event, context) => {
       console.warn('[ai-analyze] 未找到JSON，原始返回:', content.slice(0, 500));
       return {
         success: false,
-        error: 'AI 返回格式异常，无法解析结果',
+        error: '智能服务返回格式异常，无法解析结果',
         rawContent: content.slice(0, 500)
       };
     }
@@ -379,7 +379,7 @@ exports.main = async (event, context) => {
         console.warn('[ai-analyze] JSON修复失败:', fixed.slice(0, 300));
         return {
           success: false,
-          error: 'AI 返回的JSON数据不完整，请重试',
+          error: '智能服务返回的数据不完整，请重试',
           rawContent: content.slice(0, 500)
         };
       }
@@ -407,7 +407,7 @@ exports.main = async (event, context) => {
         statusCode: err.response.status
       };
     } else if (err.code === 'ECONNABORTED') {
-      return { success: false, error: 'AI API 请求超时（' + Math.round(apiTimeoutMs / 1000) + '秒），请检查模型服务和云函数网络后重试' };
+      return { success: false, error: '智能服务请求超时（' + Math.round(apiTimeoutMs / 1000) + '秒），请检查模型服务和云函数网络后重试' };
     } else {
       return { success: false, error: '请求失败: ' + (err.message || '未知错误') };
     }

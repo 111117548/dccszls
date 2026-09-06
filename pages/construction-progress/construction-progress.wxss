@@ -1,7 +1,7 @@
 .warning-screen{padding:24rpx 0 70rpx;background:#f4f7fb}
-.context-bar{margin-top:-24rpx}
 .stage-card,.manage-card{margin:24rpx 28rpx;padding:28rpx;border:1rpx solid var(--line);border-radius:14rpx;background:#fff;box-shadow:0 8rpx 26rpx rgba(23,50,78,.06)}
 .card-head,.manage-head,.progress-caption,.summary-actions,.form-line{display:flex;align-items:center;justify-content:space-between;gap:20rpx}
+.card-eyebrow{display:block;margin-bottom:5rpx;color:var(--brand);font-size:20rpx;font-weight:600}
 .stage-title{display:block;color:var(--text);font-size:34rpx;font-weight:800}
 .stage-source{display:block;margin-top:4rpx;color:var(--text-3);font-size:21rpx}
 .mode-chip{flex:none;padding:7rpx 14rpx;color:var(--success);font-size:20rpx;border:1rpx solid #a7d5c2;border-radius:6rpx;background:var(--success-soft)}
@@ -28,7 +28,7 @@
 .warning-yellow{color:#9a6407;border-color:#ead095;background:var(--warning-soft)}.warning-yellow .warning-mark{background:var(--warning)}
 .warning-orange,.warning-red{color:var(--danger);border-color:#efbfc2;background:var(--danger-soft)}.warning-orange .warning-mark,.warning-red .warning-mark{background:var(--danger)}
 .summary-actions{margin-top:22rpx;padding-top:18rpx;border-top:1rpx solid var(--line-soft)}
-.summary-actions text{color:var(--brand);font-size:22rpx}
+.summary-actions button{min-height:64rpx;margin:0;padding:0 22rpx;color:var(--brand);font-size:22rpx;line-height:62rpx;border:1rpx solid #b7d0ef;border-radius:14rpx;background:var(--brand-soft)}.summary-actions button::after{border:0}
 .correction-box{margin-top:18rpx;padding:18rpx;border:1rpx solid #c8d9ee;border-radius:10rpx;background:var(--brand-soft)}
 .compact-input{display:flex;align-items:center;justify-content:space-between;margin-bottom:12rpx}
 .compact-input text{font-size:22rpx}.compact-input input{width:190rpx;height:68rpx;padding:0 18rpx;text-align:right;border:1rpx solid #b7c9df;border-radius:7rpx;background:#fff}
@@ -44,3 +44,15 @@
 .permission-tip{display:block;margin-top:12rpx;color:var(--danger);font-size:21rpx;text-align:center}
 .safe-bottom{height:env(safe-area-inset-bottom)}
 .core-metrics .metric-unit{color:var(--text-3);font-size:19rpx}
+
+/* Ant-style cards, segmented control and forms. */
+.warning-screen{background:var(--bg);color:var(--text)}
+.stage-card,.manage-card{border-color:var(--line-soft);border-radius:24rpx;box-shadow:var(--shadow-sm)}
+.card-head text,.manage-head>view text{font-weight:700}
+.mode-tabs{padding:5rpx;border-radius:14rpx;background:#f0f0f0}.mode-tabs view{border-radius:10rpx}.mode-tabs .active{color:#1677ff;background:#fff;box-shadow:0 2rpx 8rpx rgba(0,0,0,.06)}
+.correction-box,.forecast-result,.stage-lock{border-radius:16rpx}.compact-input input,.percent-input{border-color:var(--line);border-radius:14rpx;background:#fafafa}
+.save-button{border-radius:16rpx;background:#1677ff;box-shadow:none}
+.arrival-manage-card{border-left:6rpx solid var(--brand)}
+.quantity-input{display:flex;flex:none;align-items:center;width:174rpx;height:70rpx;padding:0 16rpx;border:1rpx solid var(--line);border-radius:14rpx;background:#fafafa}.quantity-input input{width:112rpx;color:var(--brand);font-size:28rpx;font-weight:700;text-align:right}.quantity-input text{margin-left:8rpx;color:var(--text-2);font-size:21rpx}
+.arrival-import-box{margin-top:22rpx;padding:24rpx;border:1rpx dashed #b8cbe3;border-radius:16rpx;background:#f7faff}.arrival-import-title,.arrival-import-copy,.arrival-progress{display:block}.arrival-import-title{font-size:25rpx;font-weight:700}.arrival-import-copy{margin-top:8rpx;color:var(--text-2);font-size:21rpx;line-height:1.65}.arrival-progress{margin-top:16rpx;color:var(--brand);font-size:21rpx}
+.arrival-actual-progress{margin-top:20rpx;padding:18rpx 20rpx;border-radius:14rpx;background:#f5f9ff}.arrival-actual-progress>view:first-child{display:flex;align-items:center;justify-content:space-between;font-size:22rpx;color:var(--text-2)}.arrival-actual-progress label{color:var(--brand);font-size:26rpx;font-weight:700}.arrival-actual-track{height:10rpx;margin-top:14rpx;overflow:hidden;border-radius:999rpx;background:#dfe9f5}.arrival-actual-track view{height:100%;border-radius:999rpx;background:var(--brand);transition:width .2s ease}

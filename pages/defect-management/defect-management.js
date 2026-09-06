@@ -11,6 +11,8 @@ function decorateDefect(defect) {
   });
 }
 Page({
+  onShareAppMessage: function () { return require('../../utils/share.js').home(); },
+
   data: { filters: [{key:'all',name:'全部'},{key:'pending',name:'待整改'},{key:'rectifying',name:'整改中'},{key:'review',name:'待复验'},{key:'closed',name:'已闭环'}], activeFilter: 'all', defects: [], counts: {}, showDetail: false, activeDefect: null, targetId: '', currentUser: {}, syncStatus: {} },
   onLoad: function (options) { this.setData({ targetId: options.id || '' }); },
   onShow: function () { this.setData({currentUser:app.globalData.currentUser||{},syncStatus:app.globalData.cloudSyncStatus||{}});this.loadDefects(); },

@@ -9,7 +9,7 @@
     </view>
   </scroll-view>
   <view class="defect-table">
-    <view class="table-head"><text>缺陷编号</text><text>施工空间位置</text><text>安装缺陷</text><text>等级</text><text>AI</text><text>整改状态</text></view>
+    <view class="table-head"><text>缺陷编号</text><text>施工空间位置</text><text>安装缺陷</text><text>等级</text><text>智能</text><text>整改状态</text></view>
     <view class="table-row" wx:for="{{defects}}" wx:key="id" data-id="{{item.id}}" bindtap="openDetail" hover-class="record-press" role="button" aria-label="打开缺陷 {{item.name}}">
       <text class="mono">{{item.id}}</text>
       <view><text>{{item.deviceName}} / {{item.systemName}}</text><label>{{item.positionCode}}</label></view>
@@ -23,7 +23,7 @@
     <view class="modal-head"><text>DEFECT // {{activeDefect.id}}</text><button class="modal-close-btn" bindtap="closeDetail" aria-label="关闭缺陷详情">×</button></view>
     <view class="defect-title">
       <view class="alarm-indicator"></view>
-      <view><text>{{activeDefect.name}}</text><label>{{activeDefect.level}} · AI {{activeDefect.confidence*100}}%</label></view>
+      <view><text>{{activeDefect.name}}</text><label>{{activeDefect.level}} · 智能 {{activeDefect.confidence*100}}%</label></view>
       <text class="status status-{{activeDefect.status}}">{{activeDefect.statusName}}</text>
     </view>
     <view class="info-grid">
@@ -33,7 +33,7 @@
       <view><label>发现时间</label><text>{{activeDefect.createdAt}}</text></view><view><label>整改期限</label><text>{{activeDefect.deadline}}</text></view>
     </view>
 <view class="description"><label>缺陷描述</label><text>{{activeDefect.description}}</text><label>整改建议</label><text>{{activeDefect.suggestion}}</text></view>
-<view class="open-collab-notice" wx:if="{{activeDefect.openRectificationOrderId}}"><text>OPEN RECTIFICATION</text><label>{{activeDefect.openRectificationOrderId}} · {{activeDefect.openRectificationStatusName}}</label><label>该AI缺陷使用开放协作整改单，不绑定整改责任人。</label></view>
+<view class="open-collab-notice" wx:if="{{activeDefect.openRectificationOrderId}}"><text>OPEN RECTIFICATION</text><label>{{activeDefect.openRectificationOrderId}} · {{activeDefect.openRectificationStatusName}}</label><label>该智能识别缺陷使用开放协作整改单，不绑定整改责任人。</label></view>
     <view class="timeline">
       <view class="done"><view class="timeline-node"></view><text>发现缺陷</text></view>
       <view class="{{activeDefect.status!=='pending'?'done':''}}"><view class="timeline-node"></view><text>整改执行</text></view>

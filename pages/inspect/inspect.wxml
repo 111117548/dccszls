@@ -3,33 +3,40 @@
     <image class="brand-logo" src="/images/brand/zijin-longking-horizontal.png" mode="aspectFit" aria-label="紫金龙净"></image>
     <view class="brand-meta"><text>工程质量数字化平台</text><label>ENGINEERING QUALITY</label></view>
   </view>
-  <view class="context-bar">
-    <image class="context-icon-image" src="/assets/icon-review-v1/09-engineering-inspection.svg" mode="aspectFit" aria-label="工程检查"></image><text class="context-name">{{contextProject.name}} · {{contextDevice.name}}</text>
-  </view>
-  <view class="ai-subnav">
-    <view class="{{activeTab === 'photo' ? 'active' : ''}}" bindtap="switchTab" data-tab="photo" role="button"><image src="/assets/icon-review-v1/09-engineering-inspection.svg" mode="aspectFit" aria-label="AI检测"></image><label>AI检测</label></view>
-    <view class="reminder-anchor" bindtap="goRectificationCenter" role="button"><view wx:if="{{attentionCount}}" class="reminder-dot subnav-reminder"></view><image src="/assets/icon-review-v1/07-rapping-system.svg" mode="aspectFit" aria-label="整改跟踪"></image><label>整改跟踪</label></view>
-    <view class="{{activeTab === 'checklist' ? 'active' : ''}}" bindtap="switchTab" data-tab="checklist" role="button"><image src="/assets/icon-review-v1/05-collecting-plate.svg" mode="aspectFit" aria-label="检查清单"></image><label>检查清单</label></view>
-  </view>
-
   <block wx:if="{{activeTab === 'photo'}}">
     <block wx:if="{{!tempFilePath && !aiLoading && !aiResult}}">
-      <view class="page-hero ai-hero">
-        <text class="page-hero-title">AI缺陷检查</text>
-        <text class="page-hero-subtitle">视觉识别 · 整改跟踪 · 资料归档</text>
+      <view class="smart-overview-card">
+        <text class="smart-card-kicker">整改概况</text>
+        <text class="smart-card-title">智能质量检测</text>
+        <text class="smart-card-copy">现场拍照识别缺陷，人工确认后生成整改任务</text>
+        <view class="ai-stats smart-overview-stats">
+          <view class="reminder-anchor"><view wx:if="{{aiStats.pendingConfirm}}" class="reminder-dot stat-reminder"></view><label>待确认</label><text>{{aiStats.pendingConfirm}}</text></view>
+          <view class="reminder-anchor"><view wx:if="{{aiStats.pending}}" class="reminder-dot stat-reminder"></view><label>待整改</label><text class="red">{{aiStats.pending}}</text></view>
+          <view class="reminder-anchor"><view wx:if="{{aiStats.review}}" class="reminder-dot stat-reminder"></view><label>待复验</label><text class="yellow">{{aiStats.review}}</text></view>
+          <view><label>已闭环</label><text>{{aiStats.closed}}</text></view>
+        </view>
       </view>
-      <button class="start-ai" bindtap="takePhoto" hover-class="ux-press"><view class="ai-chip"><image src="/assets/icon-review-v1/09-engineering-inspection.svg" mode="aspectFit" aria-label="工程检查"></image></view><label>开始AI检测</label></button>
-      <button class="album-entry" bindtap="chooseFromAlbum">从相册选择现场照片</button>
-      <view class="ai-stats panel">
-        <view class="reminder-anchor"><view wx:if="{{aiStats.pendingConfirm}}" class="reminder-dot stat-reminder"></view><label>待确认</label><text>{{aiStats.pendingConfirm}}</text></view>
-        <view class="reminder-anchor"><view wx:if="{{aiStats.pending}}" class="reminder-dot stat-reminder"></view><label>待整改</label><text class="red">{{aiStats.pending}}</text></view>
-        <view class="reminder-anchor"><view wx:if="{{aiStats.review}}" class="reminder-dot stat-reminder"></view><label>待复验</label><text class="yellow">{{aiStats.review}}</text></view>
-        <view><label>已闭环</label><text>{{aiStats.closed}}</text></view>
+
+      <view class="detection-flow-card">
+        <view class="smart-section-head"><text>智能检测流程</text><label>检测结果经人工确认后才会生效</label></view>
+        <view class="detection-flow">
+          <view><text>1</text><label>现场拍照</label></view><text class="flow-arrow">→</text>
+          <view><text>2</text><label>智能识别</label></view><text class="flow-arrow">→</text>
+          <view><text>3</text><label>人工确认</label></view><text class="flow-arrow">→</text>
+          <view><text>4</text><label>生成整改</label></view>
+        </view>
       </view>
-      <text class="section-title">最近任务</text>
-      <view class="recent-empty" wx:if="{{!recentTasks.length}}">暂无AI缺陷任务，点击上方按钮开始检查</view>
-      <button class="recent-task reminder-anchor" wx:for="{{recentTasks}}" wx:key="id" data-id="{{item.id}}" bindtap="openRecentTask" hover-class="ux-press" aria-label="查看{{item.title}}">
-        <view wx:if="{{item.status !== 'closed'}}" class="reminder-dot task-reminder"></view>
+
+      <view class="detection-action-card">
+        <view class="smart-section-head"><text>开始检测</text><label>优先使用现场拍照，也可从相册选择</label></view>
+        <button class="start-ai" bindtap="takePhoto" hover-class="ux-press"><label>拍照开始智能检测</label></button>
+        <button class="album-entry" bindtap="chooseFromAlbum">从相册选择现场照片</button>
+      </view>
+
+      <view class="task-section-head"><text>未闭环任务</text><label>共 {{openTasks.length}} 项</label></view>
+      <view class="recent-empty" wx:if="{{!openTasks.length}}">当前没有未闭环任务</view>
+      <button class="recent-task reminder-anchor" wx:for="{{openTasks}}" wx:key="id" data-id="{{item.id}}" bindtap="openRecentTask" hover-class="ux-press" aria-label="查看{{item.title}}">
+        <view class="reminder-dot task-reminder"></view>
         <view class="task-icon"><image src="/assets/icon-review-v1/09-engineering-inspection.svg" mode="aspectFit" aria-label="检查任务"></image></view>
         <view class="task-copy">
           <text class="task-title">{{item.title}}</text>
@@ -43,7 +50,7 @@
     </block>
 
     <block wx:elif="{{!aiResult}}">
-      <view class="context-bar compact"><text class="context-name">AI现场检查 · 拍照取证</text><text class="step-counter">{{aiLoading ? '分析中' : '1/3'}}</text></view>
+      <view class="context-bar compact"><text class="context-name">智能现场检查 · 拍照取证</text><text class="step-counter">{{aiLoading ? '分析中' : '1/3'}}</text></view>
       <view class="capture-config panel">
         <view class="config-row"><label>设备区域</label><picker mode="selector" range="{{deviceNames}}" value="{{deviceIndex}}" bindchange="onDeviceChange"><view>{{deviceNames[deviceIndex]}}　⌄</view></picker></view>
         <view class="config-row"><label>检查项目</label><picker mode="selector" range="{{inspectionItemNames}}" value="{{inspectionItemIndex}}" bindchange="onInspectionItemChange"><view>{{inspectionItemNames[inspectionItemIndex] || '请选择检查项目'}}　⌄</view></picker></view>
@@ -52,10 +59,10 @@
       </view>
       <view class="capture-photo" wx:if="{{tempFilePath}}"><image src="{{tempFilePath}}" mode="aspectFit" bindtap="previewImage"></image><button bindtap="removePhoto">×</button></view>
       <view class="analysis-state panel" wx:if="{{aiLoading}}">
-        <text class="analysis-icon">AI</text><text>{{aiLoadingText}}</text><label>{{aiPhase === 'quality' ? '正在检测照片质量和识别部位' : '正在逐项对照质量标准'}}</label>
+        <text class="analysis-icon">智能</text><text>{{aiLoadingText}}</text><label>{{aiPhase === 'quality' ? '正在检测照片质量和识别部位' : '正在逐项对照质量标准'}}</label>
         <view class="analysis-progress"><view style="width:{{aiProgress}}%"></view></view>
       </view>
-      <view class="capture-actions" wx:else><button class="outline-btn" bindtap="retakePhoto">重新拍摄</button><button class="primary-btn" bindtap="runAIAnalysis">开始AI分析</button></view>
+      <view class="capture-actions" wx:else><button class="outline-btn" bindtap="retakePhoto">重新拍摄</button><button class="primary-btn" bindtap="runAIAnalysis">开始智能分析</button></view>
     </block>
 
     <block wx:else>
@@ -77,7 +84,7 @@
         <view class="confirm-table">
           <view><label>缺陷</label><text class="red">{{item.name}}</text></view>
           <view><label>等级</label><text class="red">{{item.severityName || item.severity}}</text></view>
-          <view><label>AI置信度</label><text class="blue">{{item.confidenceLabel || item.confidencePercent || '--'}}</text></view>
+          <view><label>智能置信度</label><text class="blue">{{item.confidenceLabel || item.confidencePercent || '--'}}</text></view>
           <view><label>设备</label><text>{{deviceNames[deviceIndex]}}</text></view>
           <view><label>部件</label><text>{{areaNames[areaIndex]}}</text></view>
           <view><label>位置</label><text>{{positionCode || '待补充'}}</text></view>
@@ -86,9 +93,9 @@
         <view class="quality-warning" wx:if="{{item.reviewHint}}">{{item.reviewHint}}</view>
         <view class="defect-tools"><button catchtap="editDefect" data-index="{{index}}">编辑</button><button catchtap="markAsFalsePositive" data-index="{{index}}">误报删除</button></view>
       </view>
-      <view class="no-defect panel" wx:if="{{!aiResult.defects.length}}">AI未发现明显缺陷，请人工核对后提交检查记录。</view>
-      <button class="add-missed" bindtap="showAddMissedDefect">＋ 补充AI遗漏缺陷</button>
-      <view class="result-note">⚠　AI结果需检查人确认后生效</view>
+      <view class="no-defect panel" wx:if="{{!aiResult.defects.length}}">智能检测未发现明显缺陷，请人工核对后提交检查记录。</view>
+      <button class="add-missed" bindtap="showAddMissedDefect">＋ 补充智能检测遗漏缺陷</button>
+      <view class="result-note">⚠　智能检测结果需检查人确认后生效</view>
       <view class="result-actions"><button class="outline-btn" bindtap="retakePhoto">重新拍摄</button><button class="warning-btn" bindtap="adoptResults" disabled="{{inspectionCommitted || isDemoMode}}">{{inspectionCommitted ? '已生成整改单' : isDemoMode ? '演示结果不可入库' : '确认并生成整改单'}}</button></view>
       <view class="committed-actions" wx:if="{{rectificationOrderId}}"><button class="primary-btn" bindtap="openRectification">查看整改任务</button><button class="outline-btn" bindtap="openRectificationShare">分享整改单</button></view>
     </block>

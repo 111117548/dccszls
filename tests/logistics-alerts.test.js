@@ -36,16 +36,18 @@ function resetStage(state, stageIndex, plannedQuantity) {
 var state = foundation.createInitialState();
 var today = new Date();
 
-resetStage(state, 1, 40);
-resetStage(state, 2, 24);
-resetStage(state, 3, 100);
-resetStage(state, 4, 20);
-resetStage(state, 5, 4);
-resetStage(state, 6, 8);
-resetStage(state, 7, 20);
-resetStage(state, 8, 20);
+resetStage(state, 2, 40);
+resetStage(state, 1, 24);
+resetStage(state, 1, 100);
+resetStage(state, 3, 20);
+resetStage(state, 4, 4);
+resetStage(state, 7, 8);
+resetStage(state, 6, 20);
+resetStage(state, 6, 20);
 
-var firstDaily = foundation.recordDailyStageProgress(state, 1, {
+resetStage(state, 5, 1);
+
+var firstDaily = foundation.recordDailyStageProgress(state, 2, {
   date: dateKey(today),
   arrivedAdded: 10,
   installedAdded: 5,
@@ -54,7 +56,7 @@ var firstDaily = foundation.recordDailyStageProgress(state, 1, {
 assert.strictEqual(firstDaily.metric.arrivedQuantity, 10);
 assert.strictEqual(firstDaily.metric.installedQuantity, 5);
 
-var updatedDaily = foundation.recordDailyStageProgress(state, 1, {
+var updatedDaily = foundation.recordDailyStageProgress(state, 2, {
   date: dateKey(today),
   arrivedAdded: 12,
   installedAdded: 6,
@@ -72,31 +74,31 @@ assert.ok(updatedDaily.analytics.estimatedInstallCompletionDate);
 
 assert.strictEqual(updatedDaily.allActiveAlerts.filter(function (item) { return item.type === 'inventory'; }).length, 0);
 
-foundation.setActualStage(state, 3, { name: '现场人员' }, '切换到钢支架');
-var prepareDetail = foundation.updateStageProgress(state, 3, {
+foundation.setActualStage(state, 1, { name: '现场人员' }, '切换到钢支架');
+var prepareDetail = foundation.updateStageProgress(state, 1, {
   productionQuantity: 100,
   shippedQuantity: 80,
   arrivedQuantity: 80,
   installedQuantity: 75
 }, { id: 'site-user', name: '现场人员' });
 var prepareAlert = prepareDetail.allActiveAlerts.filter(function (item) {
-  return item.type === 'ratio' && item.sourceIndex === 3 && item.targetIndex === 4;
+  return item.type === 'ratio' && item.sourceIndex === 1 && item.targetIndex === 3;
 })[0];
 assert.ok(prepareAlert);
 assert.strictEqual(prepareAlert.level, 'yellow');
 assert.strictEqual(prepareAlert.threshold, 75);
 
-var ratioDetail = foundation.updateStageProgress(state, 3, { installedQuantity: 80 }, { id: 'site-user', name: '现场人员' });
+var ratioDetail = foundation.updateStageProgress(state, 1, { installedQuantity: 80 }, { id: 'site-user', name: '现场人员' });
 var ratioAlert = ratioDetail.allActiveAlerts.filter(function (item) {
-  return item.type === 'ratio' && item.sourceIndex === 3 && item.targetIndex === 4;
+  return item.type === 'ratio' && item.sourceIndex === 1 && item.targetIndex === 3;
 })[0];
 assert.ok(ratioAlert);
 assert.strictEqual(ratioAlert.level, 'orange');
 assert.strictEqual(ratioAlert.threshold, 80);
 
 var occurrenceCount = ratioAlert.occurrenceCount;
-var firstRead = foundation.getStageProgressDetail(state, 3);
-var secondRead = foundation.getStageProgressDetail(state, 3);
+var firstRead = foundation.getStageProgressDetail(state, 1);
+var secondRead = foundation.getStageProgressDetail(state, 1);
 var repeatedRatio = secondRead.allActiveAlerts.filter(function (item) {
   return item.key === ratioAlert.key;
 })[0];
@@ -104,27 +106,27 @@ assert.ok(firstRead.allActiveAlerts.some(function (item) { return item.id === ra
 assert.strictEqual(repeatedRatio.id, ratioAlert.id);
 assert.strictEqual(repeatedRatio.occurrenceCount, occurrenceCount);
 
-foundation.setActualStage(state, 5, { name: '现场人员' }, '切换到壳体');
-foundation.updateStageProgress(state, 5, {
+foundation.setActualStage(state, 4, { name: '现场人员' }, '切换到壳体');
+foundation.updateStageProgress(state, 4, {
   productionQuantity: 3,
   shippedQuantity: 3,
   arrivedQuantity: 3,
   installedQuantity: 3
 }, { id: 'planner', name: '计划人员' });
 
-var shellTriggeredTargets = foundation.getStageProgressDetail(state, 5).alerts.filter(function (item) {
+var shellTriggeredTargets = foundation.getStageProgressDetail(state, 4).alerts.filter(function (item) {
   return item.type === 'ratio';
 }).map(function (item) {
   return item.targetIndex;
 }).sort();
-assert.deepStrictEqual(shellTriggeredTargets, [6, 7, 8]);
+assert.deepStrictEqual(shellTriggeredTargets, [5, 6, 7]);
 
 var deviceState = foundation.getCurrentDeviceState(state);
 var activeKeys = deviceState.dispatchAlerts.filter(function (item) { return item.status === 'active'; }).map(function (item) { return item.key; });
 assert.strictEqual(new Set(activeKeys).size, activeKeys.length);
 
 assert.strictEqual(foundation.acknowledgeDispatchAlert(state, ratioAlert.id, { name: '项目经理' }, '已安排车辆'), true);
-foundation.getStageProgressDetail(state, 3);
+foundation.getStageProgressDetail(state, 1);
 var handledRatio = deviceState.dispatchAlerts.filter(function (item) { return item.id === ratioAlert.id; })[0];
 assert.strictEqual(handledRatio.status, 'handled');
 assert.strictEqual(handledRatio.handleNote, '已安排车辆');

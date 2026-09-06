@@ -1,0 +1,18 @@
+var assert = require('assert');
+var foundation = require('../utils/v4-foundation');
+var state = foundation.createInitialState();
+var actor = { id: 'tester', name: '测试员' };
+foundation.setActualStage(state, 3, actor, '测试灰斗阶段');
+foundation.updateStageProgress(state, 1, { actualProgressPercent: 60 }, actor);
+foundation.updateStageProgress(state, 2, { actualProgressPercent: 80 }, actor);
+foundation.updateStageProgress(state, 3, { actualProgressPercent: 20 }, actor);
+var suggestion = foundation.getDailyReportSuggestions(state);
+assert.strictEqual(suggestion.currentStageIndex, 3);
+assert.deepStrictEqual(suggestion.todayItems, ['钢支架安装', '支座安装', '灰斗安装']);
+assert.deepStrictEqual(suggestion.tomorrowItems, suggestion.todayItems);
+assert.deepStrictEqual(suggestion.linkedStages.map(function (item) { return item.installedProgress; }), [60, 80, 20]);
+foundation.updateStageProgress(state, 2, { actualProgressPercent: 100 }, actor);
+assert.deepStrictEqual(foundation.getDailyReportSuggestions(state).todayItems, ['钢支架安装', '灰斗安装']);
+assert.ok(suggestion.todayItems.indexOf('基础梁安装') < 0, 'merged stage must not appear separately');
+assert.ok(suggestion.todayItems.indexOf('壳体安装') < 0, 'future stages must not enter the report');
+console.log(JSON.stringify({ currentStage: suggestion.currentStageName, generatedItems: suggestion.todayItems }, null, 2));

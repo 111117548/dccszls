@@ -9,6 +9,8 @@ var WEEK_DAYS = [
 ];
 
 Page({
+  onShareAppMessage: function () { return require('../../utils/share.js').home(); },
+
   data: {
     project: {}, device: {}, loading: true, savingType: '', errorText: '',
     config: { dispatch: {}, weekly: {}, contractor: {} },

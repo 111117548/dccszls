@@ -1,4 +1,5 @@
 var app = getApp();
+var share = require('../../utils/share.js');
 
 Page({
   data: {
@@ -15,18 +16,21 @@ Page({
   onLoad: function (options) {
     var orderId = decodeURIComponent((options && options.id) || '');
     this.setData({ orderId: orderId });
-    wx.showShareMenu({ menus: ['shareAppMessage'] });
+    share.setMenu(false);
     this.loadOrder();
   },
 
   onShow: function () {
-    if (this.data.orderId && !this.data.loading) this.loadOrder();
+    if (this.data.orderId && !this.data.loading && !this.data.cloudReady && !this._preparing) this.loadOrder();
   },
 
+  onUnload: function () { this._disposed = true; },
+
   loadOrder: function () {
+    share.setMenu(false);
     var order = app.getRectificationOrder(this.data.orderId);
     if (!order) {
-      this.setData({ loading: false, errorMessage: '未找到整改单，请返回AI识别结果或整改台账重新进入。' });
+      this.setData({ loading: false, errorMessage: '未找到整改单，请返回智能识别结果或整改台账重新进入。' });
       return;
     }
     if (!order.shareToken) {
@@ -36,18 +40,17 @@ Page({
     var item = (order.items || [])[0] || {};
     var decorated = Object.assign({}, order, {
       primaryItem: item,
-      defectName: item.name || order.title || 'AI缺陷整改任务',
+      defectName: item.name || order.title || '智能缺陷整改任务',
       severityName: item.level || (item.severity === 'major' ? 'Ⅲ级' : item.severity === 'minor' ? 'Ⅰ级' : 'Ⅱ级'),
       sourceImageUrl: order.sourceImageFileID || order.sourceImageLocal || '',
       positionLabel: order.positionCode || item.positionCode || '现场指定位置',
       statusName: order.statusName || '待整改'
     });
-    var path = this.buildRecipientPath(decorated);
     this.setData({
       loading: false,
       errorMessage: '',
       order: decorated,
-      recipientPath: path,
+      recipientPath: '',
       shareTitle: '整改任务：' + decorated.defectName + '｜请上传整改照片并提交复验',
       cloudReady: false,
       cloudStatus: '正在同步云端协作任务…'
@@ -56,15 +59,30 @@ Page({
   },
 
   prepareCloudShare: function () {
+    if (this._preparing) return this._preparing;
     var self = this;
-    app.prepareRectificationShare(this.data.orderId).then(function () {
-      self.setData({ cloudReady: true, cloudStatus: '云端协作已就绪，可以转发或预览' });
+    var orderId = this.data.orderId;
+    share.setMenu(false);
+    this.setData({ cloudReady: false, recipientPath: '' });
+    this._preparing = app.prepareRectificationShare(orderId).then(function (result) {
+      if (self._disposed || self.data.orderId !== orderId) return;
+      var order = result && result.order;
+      var recipientPath = result && result.ready && self.buildRecipientPath(order);
+      if (!recipientPath || !order || order.id !== orderId) throw new Error('云端任务未就绪，请重试');
+      self.setData({ order: Object.assign({}, self.data.order, order), recipientPath: recipientPath,
+        cloudReady: true, cloudStatus: '云端协作已就绪，可以转发或预览' });
+      share.setMenu(true);
     }).catch(function (err) {
+      if (self._disposed || self.data.orderId !== orderId) return;
+      share.setMenu(false);
       self.setData({
         cloudReady: false,
         cloudStatus: '云端同步失败：' + ((err && (err.message || err.errMsg)) || '请检查网络和 quality-ledger 云函数')
       });
+    }).then(function () {
+      self._preparing = null;
     });
+    return this._preparing;
   },
 
   retryCloudShare: function () {
@@ -73,13 +91,11 @@ Page({
   },
 
   buildRecipientPath: function (order) {
-    return '/pages/rectification-detail/rectification-detail?id=' + encodeURIComponent(order.id || '') +
-      '&projectId=' + encodeURIComponent(order.projectId || '') +
-      '&token=' + encodeURIComponent(order.shareToken || '') + '&from=share';
+    return share.recipientPath(order);
   },
 
   previewRecipient: function () {
-    if (!this.data.recipientPath) return;
+    if (!this.data.cloudReady || !this.data.recipientPath) return;
     wx.navigateTo({ url: this.data.recipientPath });
   },
 
@@ -114,11 +130,7 @@ Page({
   },
 
   onShareAppMessage: function () {
-    if (!this.data.cloudReady) wx.showToast({ title: '请等待云端协作就绪', icon: 'none' });
-    return {
-      title: this.data.shareTitle || '电除尘安装质量整改任务',
-      path: this.data.recipientPath || '/pages/index/index',
-      imageUrl: (this.data.order && this.data.order.sourceImageUrl) || ''
-    };
+    if (!this.data.cloudReady || !this.data.recipientPath) return share.home();
+    return share.task(this.data.order);
   }
 });

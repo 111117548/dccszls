@@ -2,6 +2,17 @@
 var util = require('../../utils/util.js');
 var app = getApp();
 
+function feishuSyncErrorText(error) {
+  var message = String(error && error.message || '请稍后重试');
+  if (error && (error.code === 'FEISHU_DEPLOYMENT_OUTDATED' || error.code === 'FEISHU_UPSTREAM_TIMEOUT')) {
+    return message;
+  }
+  if (/-504003|FUNCTIONS_TIME_LIMIT_EXCEEDED|timed out|超时|network|socket/i.test(message)) {
+    return '飞书连接较慢，当前台账不受影响，请稍后重试';
+  }
+  return message.length > 90 ? message.slice(0, 90) + '…' : message;
+}
+
 Page({
   data: {
     tabs: [
@@ -67,13 +78,15 @@ Page({
     app.refreshFeishuRectificationTasks({ forceRefresh: false }).then(function (result) {
       self.setData({
         feishuSyncing: false,
-        feishuSyncText: '飞书已同步：本项目 ' + Number(result.count || 0) + ' 项'
+        feishuSyncText: result.staleClientCache
+          ? (result.refreshError || '飞书连接较慢，当前显示上次同步的台账')
+          : '飞书已同步：本项目 ' + Number(result.count || 0) + ' 项'
       });
       self.loadRecords();
     }).catch(function (error) {
       self.setData({
         feishuSyncing: false,
-        feishuSyncText: '飞书自动同步未完成：' + ((error && error.message) || '请点击同步重试')
+        feishuSyncText: feishuSyncErrorText(error)
       });
     });
   },
@@ -160,7 +173,7 @@ Page({
       if (systemName) positionParts.push(systemName);
       if (positionCode && positionCode !== systemName) positionParts.push(positionCode);
       return Object.assign({}, item, {
-        title: item.title || first.name || 'AI缺陷整改任务',
+        title: item.title || first.name || '智能缺陷整改任务',
         positionLabel: positionParts.join(' · '),
         statusName: item.statusName || (item.status === 'closed' ? '已闭环' : item.status === 'review' ? '待复验' : item.status === 'rejected' ? '复验退回' : '待整改'),
         shortDate: dateText ? String(dateText).slice(5, 10) : ''
@@ -197,7 +210,12 @@ Page({
     if (this.data.feishuSyncing) return;
     this.setData({ feishuSyncing: true, feishuSyncText: '正在从飞书拉取本项目整改项…' });
     app.refreshFeishuRectificationTasks({ forceRefresh: true }).then(function (result) {
-      self.setData({ feishuSyncing: false, feishuSyncText: '飞书同步完成：读取 ' + (result.count || 0) + ' 项，新增 ' + (result.imported || 0) + ' 项' });
+      self.setData({
+        feishuSyncing: false,
+        feishuSyncText: result.staleClientCache
+          ? (result.refreshError || '飞书连接较慢，当前显示上次同步的台账')
+          : '飞书同步完成：读取 ' + (result.count || 0) + ' 项，新增 ' + (result.imported || 0) + ' 项'
+      });
       self.loadRecords();
       // When no row is imported, expose server-side matching diagnostics instead of
       // leaving users with an unexplained "0 items" result.
@@ -212,10 +230,11 @@ Page({
           showCancel: false
         });
       }
-      wx.showToast({ title: '飞书整改项已同步', icon: 'success' });
+      wx.showToast({ title: result.staleClientCache ? '已显示上次同步台账' : '飞书整改项已同步', icon: result.staleClientCache ? 'none' : 'success' });
     }).catch(function (err) {
-      self.setData({ feishuSyncing: false, feishuSyncText: '飞书同步失败：' + ((err && err.message) || '请检查云函数配置') });
-      wx.showModal({ title: '飞书同步失败', content: (err && err.message) || '请检查飞书应用授权和云函数环境变量。', showCancel: false });
+      var message = feishuSyncErrorText(err);
+      self.setData({ feishuSyncing: false, feishuSyncText: message });
+      wx.showModal({ title: '飞书同步失败', content: message, showCancel: false });
     });
   },
 
@@ -312,13 +331,7 @@ Page({
   },
 
   onShareAppMessage: function (res) {
-    var orderId = res && res.target && res.target.dataset ? res.target.dataset.orderid : '';
-    var order = app.getRectificationOrder(orderId);
-    if (!order || !order.shareToken) return { title: 'ESP AI质检整改记录', path: '/pages/history/history' };
-    return {
-      title: '整改协作单 ' + order.id + '｜点击上传整改照片并闭环',
-      path: '/pages/rectification-detail/rectification-detail?id=' + encodeURIComponent(order.id) + '&projectId=' + encodeURIComponent(order.projectId) + '&token=' + encodeURIComponent(order.shareToken) + '&from=share'
-    };
+    return require('../../utils/share.js').home();
   },
 
   closeDetail: function () {

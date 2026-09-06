@@ -1,6 +1,8 @@
 // Legacy-compatible quality domain model used by V4.1.
 // Equipment hierarchy is aligned to G793.0: four chambers, five fields each.
 
+var stageCatalog = require('./stage-catalog');
+
 var PROJECT = {
   id: 'project-pengyang',
   name: '彭阳项目',
@@ -16,35 +18,23 @@ var PROJECT = {
   updatedAt: '2026-07-14 09:30'
 };
 
-var CONSTRUCTION_STAGES = [
-  { index: 1, id: 'stage-01', code: 'S01', name: '支座安装', shortName: '支座', status: 'completed', statusName: '已完成', progress: 100, sourceAreas: ['support'] },
-  { index: 2, id: 'stage-02', code: 'S02', name: '基础梁安装', shortName: '基础梁', status: 'completed', statusName: '已完成', progress: 100, sourceAreas: ['support'] },
-  { index: 3, id: 'stage-03', code: 'S03', name: '钢支架安装', shortName: '钢支架', status: 'completed', statusName: '已完成', progress: 100, sourceAreas: ['support'] },
-  { index: 4, id: 'stage-04', code: 'S04', name: '灰斗安装', shortName: '灰斗', status: 'completed', statusName: '已完成', progress: 100, sourceAreas: ['ashopper'] },
-  { index: 5, id: 'stage-05', code: 'S05', name: '壳体安装', shortName: '壳体', status: 'completed', statusName: '已完成', progress: 100, sourceAreas: ['shell'] },
-  { index: 6, id: 'stage-06', code: 'S06', name: '进出口安装', shortName: '进出口', status: 'working', statusName: '当前阶段', progress: 100, sourceAreas: ['horn'] },
-  { index: 7, id: 'stage-07', code: 'S07', name: '阳极系统安装', shortName: '阳极系统', status: 'pending', statusName: '待施工', progress: 0, sourceAreas: ['anode'] },
-  { index: 8, id: 'stage-08', code: 'S08', name: '阴极系统安装', shortName: '阴极系统', status: 'pending', statusName: '待施工', progress: 0, sourceAreas: ['cathode'] },
-  { index: 9, id: 'stage-09', code: 'S09', name: '振打系统安装', shortName: '振打系统', status: 'pending', statusName: '待施工', progress: 0, sourceAreas: ['rapping'] },
-  { index: 10, id: 'stage-10', code: 'S10', name: '高压设备安装', shortName: '高压设备', status: 'pending', statusName: '待施工', progress: 0, sourceAreas: ['hvline'] },
-  { index: 11, id: 'stage-11', code: 'S11', name: '平台扶梯安装', shortName: '平台扶梯', status: 'pending', statusName: '待施工', progress: 0, sourceAreas: ['platform'] },
-  { index: 12, id: 'stage-12', code: 'S12', name: '电气仪表安装', shortName: '电气仪表', status: 'pending', statusName: '待施工', progress: 0, sourceAreas: ['instrument'] },
-  { index: 13, id: 'stage-13', code: 'S13', name: '调试验收', shortName: '调试验收', status: 'pending', statusName: '待施工', progress: 0, sourceAreas: [] }
-];
+var CONSTRUCTION_STAGES = stageCatalog.STAGES.map(function (stage) {
+  return Object.assign({}, stage, { status: 'pending', statusName: '待施工', progress: 0, sourceAreas: stage.areaKeys.slice() });
+});
 
 var STANDARD_SOURCES = {
   shell: { document: '壳体.pdf', stageId: 'stage-05', scope: '壳体、阻流板、顶梁、承压件及内部走道' },
   ashopper: { document: '灰斗.pdf', stageId: 'stage-04', scope: '灰斗组合、密封焊、加强筋、管撑及附件' },
   anode: { document: '阳极系统.pdf', stageId: 'stage-07', scope: '阳极板、悬挂、振打砧梁、定位耙及异极距' },
-  cathode: { document: '阴极框架组合.pdf / 阴极系统.pdf', stageId: 'stage-08', scope: '阴极框架制作、吊杆、桅杆、接地及防摆' },
+  cathode: { document: '阴极框架组合.pdf / 阴极系统.pdf', stageId: 'stage-07', scope: '阴极框架制作、吊杆、桅杆、接地及防摆' },
   rapping: { document: '振打系统.pdf', stageId: 'stage-09', scope: '振打棒、振打器底座、同心度及密封' },
   support: { document: '支座.pdf / 钢支架.pdf', stageId: 'stage-01', scope: '固定/活动支座、钢支架、柱脚、标高与垂直度' },
   horn: { document: '进出口喇叭.pdf', stageId: 'stage-06', scope: '喇叭管撑、分布板、防冲刷角钢及过渡板' },
-  hoist: { document: '顶部起吊.pdf', stageId: 'stage-11', scope: '顶部起吊支座、斜管撑及电动葫芦限位' },
-  hvline: { document: '高压进线.pdf', stageId: 'stage-10', scope: '高压导线、母排预紧、绝缘子及设备接地' }
+  hoist: { document: '顶部起吊.pdf', stageId: 'stage-top-hoist', scope: '顶部起吊支座、斜管撑及电动葫芦限位' },
+  hvline: { document: '高压进线.pdf', stageId: 'stage-12', scope: '高压导线、母排预紧、绝缘子及设备接地' }
 };
 
-var AREA_STAGE_MAP = { support: 'stage-03', shell: 'stage-05', ashopper: 'stage-04', horn: 'stage-06', anode: 'stage-07', cathode: 'stage-08', rapping: 'stage-09', hoist: 'stage-11', hvline: 'stage-10', platform: 'stage-11', instrument: 'stage-12' };
+var AREA_STAGE_MAP = { support: 'stage-03', shell: 'stage-05', ashopper: 'stage-04', horn: 'stage-06', anode: 'stage-07', cathode: 'stage-07', rapping: 'stage-09', hoist: 'stage-top-hoist', hvline: 'stage-12', platform: 'stage-11', instrument: 'stage-12' };
 
 function qualityNode(id, name, type, score, areaKey, extra) {
   return Object.assign({
@@ -97,7 +87,7 @@ var DEVICE_TREE = qualityNode('esp', 'G793低低温电除尘器', 'esp-construct
       constructionStatus: 'accepted', constructionStatusName: '已验收',
       children: [
         qualityNode('support-bearing', '固定/活动支座', 'bearing', 98, 'support', { stageId: 'stage-01', constructionStatus: 'accepted', constructionStatusName: '已验收' }),
-        qualityNode('foundation-beam', '基础梁', 'foundation-beam', 98, 'support', { stageId: 'stage-02', constructionStatus: 'accepted', constructionStatusName: '已验收' }),
+        qualityNode('foundation-beam', '基础梁', 'foundation-beam', 98, 'support', { stageId: 'stage-03', constructionStatus: 'accepted', constructionStatusName: '已验收' }),
         qualityNode('steel-support', '钢支架', 'steel-support', 97, 'support', { stageId: 'stage-03', constructionStatus: 'accepted', constructionStatusName: '已验收' })
       ]
     }),
@@ -152,7 +142,7 @@ var INITIAL_DEFECTS = [
     suggestion: '保持自由铅垂状态，按同通道两排同步调整后复测。', standard: '阳极系统.pdf · 第1/3/4项',
     sourceDocument: '阳极系统.pdf', constructionStageId: 'stage-07', inspectionItemId: 'an1', image: '', imageFileID: '',
     imageBBox: { x: 0.42, y: 0.28, w: 0.16, h: 0.24 }, modelMarker: { regionId: 'a1-field-1', x: 44, y: 36 },
-    inspector: 'AI智能检测', createdAt: '2026-07-14 09:18', deadline: '2026-07-16', rectification: null, review: null
+    inspector: '智能检测', createdAt: '2026-07-14 09:18', deadline: '2026-07-16', rectification: null, review: null
   },
   {
     id: 'DF-20260714-002', projectId: PROJECT.id,
@@ -160,7 +150,7 @@ var INITIAL_DEFECTS = [
     deviceName: 'A1室 第1电场', systemName: '阴极系统', positionCode: 'A1室/第1电场/B列2排',
     name: '阴极吊杆焊缝高度不足', type: 'weld', severity: 'moderate', level: 'Ⅲ级', confidence: 0.88,
     status: 'rectifying', statusName: '整改中', description: '吊杆与吊梁圆周焊局部高度不足。', suggestion: '补焊至8mm并复核焊缝饱满度。',
-    standard: '阴极系统.pdf · 第1项', sourceDocument: '阴极系统.pdf', constructionStageId: 'stage-08', inspectionItemId: 'c1', image: '', imageFileID: '',
+    standard: '阴极系统.pdf · 第1项', sourceDocument: '阴极系统.pdf', constructionStageId: 'stage-07', inspectionItemId: 'c1', image: '', imageFileID: '',
     imageBBox: { x: 0.28, y: 0.36, w: 0.18, h: 0.15 }, modelMarker: { regionId: 'a1-field-1', x: 68, y: 56 },
     inspector: '张工', createdAt: '2026-07-14 10:26', deadline: '2026-07-17', rectification: { owner: '安装一班', updatedAt: '2026-07-14 14:10', note: '已安排补焊' }, review: null
   },
@@ -172,7 +162,7 @@ var INITIAL_DEFECTS = [
     status: 'pending', statusName: '待整改', description: '振打棒露出长度超出60±2mm允许范围。', suggestion: '按图重新调整并复测。',
     standard: '振打系统.pdf · 第2项', sourceDocument: '振打系统.pdf', constructionStageId: 'stage-09', inspectionItemId: 'r2', image: '', imageFileID: '',
     imageBBox: { x: 0.55, y: 0.41, w: 0.14, h: 0.16 }, modelMarker: { regionId: 'a1-field-5', x: 56, y: 45 },
-    inspector: 'AI智能检测', createdAt: '2026-07-14 11:42', deadline: '2026-07-18', rectification: null, review: null
+    inspector: '智能检测', createdAt: '2026-07-14 11:42', deadline: '2026-07-18', rectification: null, review: null
   },
   {
     id: 'DF-20260713-004', projectId: PROJECT.id,
@@ -189,7 +179,7 @@ var INITIAL_DEFECTS = [
 var INSPECTION_TASKS = [
   { id: 'INSP-0714-01', name: 'A1室第1电场阳极安装质量检查', deviceNodeId: 'a1-field-1-anode', stageId: 'stage-07', inspector: '张工', photoCount: 8, itemCount: 16, defectCount: 2, status: 'completed', time: '09:00-10:30' },
   { id: 'INSP-0714-02', name: 'A1室第5电场振打系统安装检查', deviceNodeId: 'a1-field-5-rapping', stageId: 'stage-09', inspector: '李工', photoCount: 5, itemCount: 6, defectCount: 1, status: 'completed', time: '11:10-11:55' },
-  { id: 'INSP-0714-03', name: '顶部高压进线专项安装检查', deviceNodeId: 'a1-hvline', stageId: 'stage-10', inspector: '王工', photoCount: 3, itemCount: 5, defectCount: 0, status: 'in_progress', time: '14:00-进行中' }
+  { id: 'INSP-0714-03', name: '顶部高压进线专项安装检查', deviceNodeId: 'a1-hvline', stageId: 'stage-12', inspector: '王工', photoCount: 3, itemCount: 5, defectCount: 0, status: 'in_progress', time: '14:00-进行中' }
 ];
 
 var STATUS_NAMES = { pending: '待整改', rectifying: '整改中', review: '待复验', closed: '已闭环' };
@@ -294,6 +284,7 @@ function createInitialState(historyRecords) {
     });
   });
   return {
+    stageSchemaVersion: stageCatalog.VERSION,
     schemaVersion: '4.1-domain', project: clone(PROJECT), deviceTree: clone(DEVICE_TREE),
     qualityScore: 92, healthScore: 92, qualityStatus: 'warning', qualityStatusName: '重点工序施工中',
     qualityMetrics: clone(QUALITY_METRICS), healthMetrics: clone(QUALITY_METRICS), constructionStages: clone(CONSTRUCTION_STAGES),
@@ -322,15 +313,25 @@ function migrateDefectLocation(defect) {
     item.fieldNo = context.fieldNo;
     item.deviceName = context.deviceName || item.deviceName;
   }
-  var areaKey = getAreaForDevice(item.deviceNodeId);
-  if (AREA_STAGE_MAP[areaKey]) item.constructionStageId = AREA_STAGE_MAP[areaKey];
+  var node = getNodeById(item.deviceNodeId);
+  if (node && node.stageId) item.constructionStageId = node.stageId;
+  item.constructionStageId = stageCatalog.canonicalId(item.constructionStageId);
   return item;
 }
 
 function normalizeState(saved, historyRecords) {
   var initial = createInitialState(historyRecords);
   if (!saved || (saved.schemaVersion !== '3.1-construction' && saved.schemaVersion !== '4.1-domain')) return initial;
+  saved = clone(saved);
+  function migrateIds(value) {
+    if (!value || typeof value !== 'object') return;
+    if (value.stageId) value.stageId = stageCatalog.canonicalId(value.stageId);
+    if (value.constructionStageId) value.constructionStageId = stageCatalog.canonicalId(value.constructionStageId);
+    Object.keys(value).forEach(function (key) { if (value[key] && typeof value[key] === 'object') migrateIds(value[key]); });
+  }
+  migrateIds(saved);
   return Object.assign(initial, saved, {
+    stageSchemaVersion: stageCatalog.VERSION,
     schemaVersion: '4.1-domain',
     project: Object.assign(initial.project, saved.project || {}), deviceTree: clone(DEVICE_TREE),
     constructionStages: clone(CONSTRUCTION_STAGES), qualityMetrics: clone(QUALITY_METRICS), healthMetrics: clone(QUALITY_METRICS),

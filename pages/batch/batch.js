@@ -3,6 +3,8 @@ var util = require('../../utils/util.js');
 var app = getApp();
 
 Page({
+  onShareAppMessage: function () { return require('../../utils/share.js').home(); },
+
   data: {
     maxPhotos: 9,
     photos: [],          // [{id, path, status, defects, areaName, majorCount, moderateCount, minorCount, fileID, errorMsg}]
@@ -394,7 +396,7 @@ Page({
     if (this.data.isDemoMode) {
       wx.showModal({
         title: '当前为批量演示结果',
-        content: '演示结果可以复核、编辑和查看流程，但不会写入正式检查记录。请在首页配置云端AI并关闭演示模式后，再生成正式记录。',
+        content: '演示结果可以复核、编辑和查看流程，但不会写入正式检查记录。请在首页配置云端智能服务并关闭演示模式后，再生成正式记录。',
         showCancel: false,
         confirmText: '知道了'
       });
@@ -405,7 +407,7 @@ Page({
       (photo.defects || []).forEach(function (defect) { if (!defect.confirmed) unconfirmed++; });
     });
     if (unconfirmed > 0) {
-      wx.showModal({ title: '仍有未复核缺陷', content: '还有 ' + unconfirmed + ' 条AI缺陷未确认。请逐条确认、编辑或删除后再提交。', showCancel: false });
+      wx.showModal({ title: '仍有未复核缺陷', content: '还有 ' + unconfirmed + ' 条智能识别缺陷未确认。请逐条确认、编辑或删除后再提交。', showCancel: false });
       return;
     }
     if (this._saveBatchToHistory(this.data.photos, this.data.totalDefects, this.data.totalMajor, this.data.totalModerate, this.data.totalMinor)) {
@@ -685,7 +687,7 @@ Page({
       var reportData = {
         project: 'ESP安装质量检查',
         date: util.formatDate(),
-        inspector: 'AI智能检测',
+        inspector: '智能检测',
         area: '批量巡检'
       };
 

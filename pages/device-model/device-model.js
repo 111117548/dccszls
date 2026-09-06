@@ -2,6 +2,8 @@ var app = getApp();
 var v3Data = require('../../utils/v3-data.js');
 
 Page({
+  onShareAppMessage: function () { return require('../../utils/share.js').home(); },
+
   data: { project: {}, regions: [], markers: [], rows: [], selectedId: 'esp', selectedNode: {}, selectedDefects: [] },
   onShow: function () { this.loadModel(); },
   loadModel: function () {
@@ -43,18 +45,23 @@ Page({
   openDefect: function (e) { wx.navigateTo({ url: '/pages/defect-management/defect-management?id=' + e.currentTarget.dataset.id }); },
   resolveStageIndex: function (id) {
     var text = String(id || '').toLowerCase();
-    if (/support-bearing|bearing|seat|支座/.test(text)) return 1;
-    if (/foundation|beam|基础梁/.test(text)) return 2;
-    if (/steel-support|steel|frame|钢支架/.test(text)) return 3;
-    if (/hopper|ash|灰斗/.test(text)) return 4;
-    if (/shell|casing|chamber|壳体/.test(text)) return 5;
-    if (/inlet|outlet|horn|喇叭/.test(text)) return 6;
-    if (/anode|阳极/.test(text)) return 7;
-    if (/cathode|阴极/.test(text)) return 8;
-    if (/rapping|振打/.test(text)) return 9;
-    if (/high-voltage|hv|高压/.test(text)) return 10;
-    if (/platform|stair|hoist|平台|扶梯|起吊/.test(text)) return 11;
-    if (/electric|instrument|meter|电气|仪表/.test(text)) return 12;
+    var node = v3Data.getNodeById(id);
+    var catalog = require('../../utils/stage-catalog');
+    var stageId = catalog.canonicalId(node && node.stageId);
+    var stage = catalog.STAGES.find(function (item) { return item.id === stageId; });
+    if (stage) return stage.index;
+    if (/nano|coating|纳米|涂层/.test(text)) return 9;
+    if (/insulation|保温箱/.test(text)) return 8;
+    if (/hoist|起吊/.test(text)) return 12;
+    if (/rapping|振打/.test(text)) return 10;
+    if (/support-bearing|bearing|seat|支座/.test(text)) return 2;
+    if (/foundation|beam|steel|frame|基础梁|钢支架/.test(text)) return 1;
+    if (/hopper|ash|灰斗/.test(text)) return 3;
+    if (/shell|casing|chamber|壳体/.test(text)) return 4;
+    if (/inlet|outlet|horn|喇叭/.test(text)) return 7;
+    if (/anode|cathode|阳极|阴极/.test(text)) return 6;
+    if (/platform|stair|平台|扶梯/.test(text)) return 5;
+    if (/high-voltage|hv|electric|instrument|meter|高压|电气|仪表/.test(text)) return 11;
     return Number(app.getFoundationContext().stage.index) || 1;
   },
   openProgressByIndex: function (stageIndex, source) {

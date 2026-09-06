@@ -1,6 +1,8 @@
 var app = getApp();
 
 Page({
+  onShareAppMessage: function () { return require('../../utils/share.js').home(); },
+
   data: {
     identity: { bound: false },
     userName: '未绑定飞书账号', roleName: '项目经理', projectName: '未选择项目',

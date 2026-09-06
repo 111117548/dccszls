@@ -1,11 +1,7 @@
 <view class="screen reminder-screen">
-  <view class="reminder-context">
-    <view class="reminder-context-icon">🔔</view>
-    <view><text>{{project.name || '当前项目'}}</text><label>{{device.name || '全部炉号'}}</label></view>
-  </view>
-
-  <view class="reminder-intro">
-    <text>微信提醒中心</text>
+  <view class="reminder-intro reminder-overview-card">
+    <text class="reminder-overview-kicker">提醒概况</text>
+    <text class="reminder-overview-title">微信提醒中心</text>
     <label>提醒将通过微信“服务通知”发送。每项提醒都需要接收人主动授权。</label>
   </view>
 

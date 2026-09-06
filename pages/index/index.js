@@ -12,6 +12,8 @@ var PROVIDER_PRESETS = {
 };
 
 Page({
+  onShareAppMessage: function () { return require('../../utils/share.js').home(); },
+
   data: {
     project: {},
     device: {},
@@ -33,7 +35,7 @@ Page({
     constructionStages: [],
     completedStageCount: 0,
     actualStageIndex: 1,
-    actualStageName: '支座安装',
+    actualStageName: '钢支架安装',
     actualStageIcon: engineeringIcons.forStage(1),
     actualStageProgress: 0,
     logisticsAlertCount: 0,
@@ -41,17 +43,16 @@ Page({
     logisticsAlertLevelName: '正常',
     logisticsAlertText: '库存与运输时间充足',
     logisticsAlertStageIndex: 1,
-    modelView: 'arrival',
     modelPartSelected: false,
     selectedPartName: '',
-    selectedMetricLabel: '到货进度',
+    selectedMetricLabel: '施工进度',
     selectedMetricProgress: 0,
-    selectedStatusText: '待到货',
+    selectedStatusText: '待安装',
     selectedStatusClass: 'pending',
     arrivalOverallProgress: 0,
     installationOverallProgress: 0,
     modelStageIndex: 1,
-    modelStageName: '支座安装',
+    modelStageName: '钢支架安装',
     modelStageIcon: engineeringIcons.forStage(1),
     selectedStageProgress: {
       index: 1,
@@ -85,18 +86,44 @@ Page({
     showArrivalSheet: false,
     showSettings: false,
     modelCanvasVisible: true,
+    modelReplayToken: 0,
+    modelViewportHeightPx: 340,
     config: { provider: 'qwen', endpoint: '', model: '', demoMode: true },
     featureSettings: { autoAreaDetect: true, qualityCheck: true },
     aiServiceStatus: 'unknown',
-    aiServiceStatusText: '尚未检测云端AI服务',
+    aiServiceStatusText: '尚未检测云端智能服务',
     currentTime: ''
     , feishuIdentity: { bound: false }
     , currentProjectCanEdit: false
   },
 
+  onLoad: function () {
+    this.updateModelViewportHeight();
+  },
+
   onShow: function () {
+    this.updateModelViewportHeight();
     this.refreshDashboard();
     this.refreshAccountStatus();
+    this.setData({ modelReplayToken: Number(this.data.modelReplayToken || 0) + 1 });
+  },
+
+  onResize: function (event) {
+    this.updateModelViewportHeight(event && event.size);
+  },
+
+  updateModelViewportHeight: function (size) {
+    var info = size || (wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync());
+    var width = Math.max(320, Number(info.windowWidth || 375));
+    var height = Math.max(480, Number(info.windowHeight || 667));
+    var rpx = width / 750;
+    var landscape = width > height;
+    var minHeight = (landscape ? 300 : 455) * rpx;
+    var maxHeight = (landscape ? 430 : 680) * rpx;
+    var reservedHeight = (landscape ? 330 : 560) * rpx;
+    var desiredHeight = height - reservedHeight;
+    var modelHeight = Math.round(Math.max(minHeight, Math.min(maxHeight, desiredHeight)));
+    if (modelHeight !== Number(this.data.modelViewportHeightPx || 0)) this.setData({ modelViewportHeightPx: modelHeight });
   },
 
   refreshAccountStatus: function () {
@@ -191,10 +218,8 @@ Page({
         : context.stage.index,
       modelPartSelected: false,
       selectedPartName: actualStageProgress.shortName || context.stage.shortName || context.stage.name,
-      selectedMetricLabel: this.data.modelView === 'installation' ? '安装进度' : '到货进度',
-      selectedMetricProgress: this.data.modelView === 'installation'
-        ? Number(actualStageProgress.installedProgress || actualStageProgress.progress || 0)
-        : Number(actualStageProgress.arrivedProgress || 0),
+      selectedMetricLabel: '施工进度',
+      selectedMetricProgress: Number(actualStageProgress.installedProgress || actualStageProgress.progress || 0),
       arrivalOverallProgress: arrivalOverallProgress,
       installationOverallProgress: installationOverallProgress,
       modelStageIndex: context.stage.index,
@@ -295,8 +320,11 @@ Page({
         ownedProjectCount: projects.filter(function (item) { return item.canEdit === true; }).length,
         defectProjectCount: projects.filter(function (item) { return Number(item.taskCount || 0) > 0; }).length,
         feishuCatalogSyncedAt: result.syncedAt || '',
-        feishuCatalogError: projects.length ? '' : '飞书表中暂未读取到已填写项目名称的记录'
+        feishuCatalogError: result.staleClientCache
+          ? '当前显示上次成功读取的项目；' + (result.refreshError || '本次刷新暂未成功，请稍后重试')
+          : (projects.length ? '' : '飞书表中暂未读取到已填写项目名称的记录')
       }, function () { self.applyProjectFilter(); });
+      if (showError && result.staleClientCache) wx.showToast({ title: '已保留上次项目列表', icon: 'none' });
       if (selectedOption) self.refreshDashboard();
     }).catch(function (error) {
       var message = error && error.message || '无法读取飞书项目列表';
@@ -388,13 +416,19 @@ Page({
       return Number(item.index) === index;
     });
     if (!stage) return;
+    var progress = Number(stage.installedProgress || stage.progress || 0);
     this.setData({
       modelStageIndex: stage.index,
       modelStageName: stage.name,
       modelStageIcon: stage.iconPath || engineeringIcons.forStage(stage.index),
       selectedStageProgress: stage,
       stageScrollLeft: Math.max(0, (stage.index - 5) * 105),
-      modelPartSelected: false
+      modelPartSelected: true,
+      selectedPartName: stage.shortName || stage.name || '当前部件',
+      selectedMetricLabel: '施工进度',
+      selectedMetricProgress: Math.round(progress),
+      selectedStatusText: progress >= 100 ? '安装完成' : progress > 0 ? '安装中' : '待安装',
+      selectedStatusClass: progress >= 100 ? 'complete' : progress > 0 ? 'working' : 'pending'
     });
   },
 
@@ -419,35 +453,24 @@ Page({
   onTwinPartTap: function (e) {
     var detail = e.detail || {};
     var stage = this.data.selectedStageProgress || {};
-    var isInstallation = this.data.modelView === 'installation';
-    var progress = isInstallation
-      ? Number(stage.installedProgress || stage.progress || 0)
-      : Number(stage.arrivedProgress || 0);
-    var statusText = isInstallation
-      ? (progress >= 100 ? '安装完成' : progress > 0 ? '安装中' : '待安装')
-      : (progress >= 100 ? '到货完成' : progress > 0 ? '到货中' : '待到货');
+    var progress = Number(stage.installedProgress || stage.progress || 0);
+    var statusText = progress >= 100 ? '安装完成' : progress > 0 ? '安装中' : '待安装';
     this.setData({
       modelPartSelected: true,
       selectedPartName: (stage.shortName || this.data.modelStageName || '当前部件') + (detail.name ? ' · ' + detail.name : ''),
-      selectedMetricLabel: isInstallation ? '安装进度' : '到货进度',
+      selectedMetricLabel: '施工进度',
       selectedMetricProgress: Math.round(progress),
       selectedStatusText: statusText,
       selectedStatusClass: progress >= 100 ? 'complete' : progress > 0 ? 'working' : 'pending'
     });
   },
 
-  setModelView: function (e) {
-    var view = e.currentTarget.dataset.view === 'installation' ? 'installation' : 'arrival';
-    this.setData({ modelView: view, modelPartSelected: false });
-  },
-
   openSelectedPart: function () {
-    this.openConstructionProgress(this.data.modelStageIndex, this.data.modelView === 'installation' ? 'model-installation' : 'model-arrival');
+    this.openConstructionProgress(this.data.modelStageIndex, 'model-part');
   },
 
   openModelOverview: function () {
-    if (this.data.modelView === 'installation') this.openConstructionProgress(this.data.modelStageIndex, 'model-overview');
-    else this.openArrivalSheet();
+    this.openConstructionProgress(this.data.modelStageIndex, 'model-overview');
   },
 
   openConstructionProgress: function (stageIndex, source) {
@@ -495,7 +518,7 @@ Page({
       },
       featureSettings: Object.assign({}, app.globalData.featureSettings || {}),
       aiServiceStatus: 'checking',
-      aiServiceStatusText: '正在检测云端AI配置...'
+      aiServiceStatusText: '正在检测云端智能配置...'
     });
     this.checkAIServiceStatus();
   },
@@ -515,7 +538,7 @@ Page({
       success: function (res) {
         var result = res.result || {};
         if (result.success && result.configured) {
-          self.setData({ aiServiceStatus: 'ready', aiServiceStatusText: '真实AI服务已就绪（密钥保存在云端）' });
+          self.setData({ aiServiceStatus: 'ready', aiServiceStatusText: '智能服务已就绪（密钥保存在云端）' });
         } else {
           self.setData({ aiServiceStatus: 'missing', aiServiceStatusText: '云端API Key尚未配置，可先开启演示模式' });
         }
@@ -544,7 +567,7 @@ Page({
   toggleAreaDetect: function () { this.setData({ 'featureSettings.autoAreaDetect': !this.data.featureSettings.autoAreaDetect }); },
   saveSettings: function () {
     if (!this.data.config.demoMode && !this.data.config.endpoint) {
-      wx.showToast({ title: '请完善AI服务配置', icon: 'none' }); return;
+      wx.showToast({ title: '请完善智能服务配置', icon: 'none' }); return;
     }
     app.globalData.aiConfig = Object.assign({}, this.data.config);
     app.globalData.featureSettings = Object.assign({}, this.data.featureSettings);

@@ -2,6 +2,7 @@
   "pages": [
     "pages/index/index",
     "pages/workbench/workbench",
+    "pages/feature-coming-soon/feature-coming-soon",
     "pages/today/today",
     "pages/profile/profile",
     "pages/api-management/api-management",
@@ -27,12 +28,12 @@
     "navigationBarBackgroundColor": "#ffffff",
     "navigationBarTitleText": "紫金龙净工程质量平台",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#f4f7fb",
+    "backgroundColor": "#f5f5f5",
     "backgroundTextStyle": "dark"
   },
   "tabBar": {
-    "color": "#7b8796",
-    "selectedColor": "#0b4aa2",
+    "color": "#8c8c8c",
+    "selectedColor": "#1677ff",
     "backgroundColor": "#ffffff",
     "borderStyle": "white",
     "list": [

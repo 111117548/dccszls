@@ -6,6 +6,7 @@
 const cloud = require('wx-server-sdk');
 const https = require('https');
 const path = require('path');
+const { attachmentUrls, resolveEvidence } = require('./evidence');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
 
@@ -15,7 +16,10 @@ const db = cloud.database();
 const DEFAULT_APP_TOKEN = 'UHjvbqHtrak96Usb1ItcwI8pnNe';
 const DEFAULT_TABLE_ID = 'tbl8MwNtgzsHjG0A';
 const API_HOST = 'open.feishu.cn';
-const HTTP_TIMEOUT = 15000;
+// Keep a complete cold-start request inside CloudBase's 30-second function
+// limit. Multiple 15-second HTTP retries previously guaranteed a platform
+// timeout before our code could return a useful Feishu error.
+const HTTP_TIMEOUT = 7000;
 const RECORD_CACHE_TTL = 2 * 60 * 1000;
 const CATALOG_CACHE_TTL = 5 * 60 * 1000;
 const TASK_CACHE_TTL = 60 * 1000;
@@ -318,8 +322,9 @@ async function atStage(stage, label, operation) {
   }
 }
 
-function request(method, requestPath, headers, body) {
+function request(method, requestPath, headers, body, requestOptions) {
   return new Promise((resolve, reject) => {
+    requestOptions = requestOptions || {};
     let payload = body || null;
     if (payload && typeof payload === 'object' && !Buffer.isBuffer(payload)) {
       payload = JSON.stringify(payload);
@@ -345,18 +350,116 @@ function request(method, requestPath, headers, body) {
       });
     });
     req.on('error', reject);
-    req.setTimeout(HTTP_TIMEOUT, () => {
-      req.destroy(new Error('飞书接口请求超时，请稍后重试'));
+    req.setTimeout(Number(requestOptions.timeoutMs || HTTP_TIMEOUT), () => {
+      const error = new Error('飞书接口请求超时，请稍后重试');
+      error.code = 'FEISHU_HTTP_TIMEOUT';
+      error.requestPath = requestPath;
+      req.destroy(error);
     });
     if (payload) req.write(payload);
     req.end();
   });
 }
 
+function transientReadError(error) {
+  const status = Number(error && error.httpStatus || 0);
+  const code = String(error && error.code || '');
+  const message = String(error && error.message || '');
+  return status === 429 || status >= 500 ||
+    code === 'FEISHU_HTTP_TIMEOUT' ||
+    /ETIMEDOUT|ECONNRESET|EAI_AGAIN|socket hang up|接口请求超时/i.test(message);
+}
+
+async function requestReadWithRetry(requestPath, headers, options) {
+  options = options || {};
+  const method = String(options.method || 'GET').toUpperCase();
+  const maxAttempts = Math.max(1, Number(options.maxAttempts || 2));
+  let lastError = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await request(method, requestPath, headers, options.body || null, { timeoutMs: Number(options.timeoutMs || 8000) });
+    } catch (error) {
+      lastError = error;
+      if (attempt >= maxAttempts || !transientReadError(error)) throw error;
+      await new Promise(resolve => setTimeout(resolve, 250 * attempt));
+    }
+  }
+  throw lastError;
+}
+
+async function searchProjectRecords(token, c, project, fieldMap) {
+  const projectName = String(project.feishuProjectName || '').trim();
+  const deviceName = String(project.feishuDeviceName || '').trim();
+  const fieldNames = [
+    fieldMap.project,
+    fieldMap.manager,
+    fieldMap.projectCode,
+    fieldMap.device,
+    fieldMap.location,
+    fieldMap.category,
+    fieldMap.level,
+    fieldMap.description,
+    fieldMap.deadline,
+    fieldMap.status,
+    fieldMap.sourceImages,
+    fieldMap.closureImages,
+    fieldMap.closureNote,
+    fieldMap.closureTime
+  ].filter((name, index, all) => name && all.indexOf(name) === index);
+  const conditions = [
+    { field_name: fieldMap.project, operator: 'is', value: [projectName] },
+    { field_name: fieldMap.device, operator: 'is', value: [deviceName] }
+  ];
+  let pageToken = '';
+  const all = [];
+  const seenPageTokens = {};
+  do {
+    const params = ['page_size=200'];
+    if (pageToken) params.push('page_token=' + encodeURIComponent(pageToken));
+    const requestPath = '/open-apis/bitable/v1/apps/' + encodeURIComponent(c.appToken) + '/tables/' + encodeURIComponent(c.tableId) + '/records/search?' + params.join('&');
+    const result = await requestReadWithRetry(requestPath, {
+      Authorization: 'Bearer ' + token,
+      'Content-Type': 'application/json; charset=utf-8'
+    }, {
+      method: 'POST',
+      body: { field_names: fieldNames, filter: { conjunction: 'and', conditions } },
+      timeoutMs: 7000,
+      maxAttempts: 1
+    });
+    const data = result.data || {};
+    all.push.apply(all, data.items || []);
+    const nextPageToken = data.has_more ? String(data.page_token || '') : '';
+    if (nextPageToken && seenPageTokens[nextPageToken]) throw new Error('飞书分页游标重复，已停止读取以避免重复数据');
+    if (nextPageToken) seenPageTokens[nextPageToken] = true;
+    pageToken = nextPageToken;
+  } while (pageToken);
+  return all;
+}
+
+async function searchProjectPermissionRecords(token, c, projectName, fieldMap) {
+  const requestPath = '/open-apis/bitable/v1/apps/' + encodeURIComponent(c.appToken) + '/tables/' + encodeURIComponent(c.tableId) + '/records/search?page_size=100';
+  const result = await requestReadWithRetry(requestPath, {
+    Authorization: 'Bearer ' + token,
+    'Content-Type': 'application/json; charset=utf-8'
+  }, {
+    method: 'POST',
+    body: {
+      field_names: [fieldMap.project, fieldMap.manager].filter(Boolean),
+      filter: {
+        conjunction: 'and',
+        conditions: [{ field_name: fieldMap.project, operator: 'is', value: [String(projectName || '').trim()] }]
+      }
+    },
+    timeoutMs: 6000,
+    maxAttempts: 1
+  });
+  return (result.data && result.data.items) || [];
+}
+
 async function tenantToken(c) {
   if (!c.appId || !c.appSecret) throw new Error('尚未配置飞书凭证：请在 feishu-rectification 云函数环境变量填写 FEISHU_APP_ID 与 FEISHU_APP_SECRET');
   if (tokenCache && tokenCache.token && tokenCache.expiresAt > Date.now()) return tokenCache.token;
-  const response = await request('POST', '/open-apis/auth/v3/tenant_access_token/internal', { 'Content-Type': 'application/json; charset=utf-8' }, JSON.stringify({ app_id: c.appId, app_secret: c.appSecret }));
+  const response = await request('POST', '/open-apis/auth/v3/tenant_access_token/internal', { 'Content-Type': 'application/json; charset=utf-8' }, JSON.stringify({ app_id: c.appId, app_secret: c.appSecret }), { timeoutMs: 6000 });
   if (!response.tenant_access_token) throw new Error('未获取到飞书 tenant_access_token');
   const validSeconds = Math.max(60, Number(response.expire || 7200) - 300);
   tokenCache = { token: response.tenant_access_token, expiresAt: Date.now() + validSeconds * 1000 };
@@ -434,21 +537,27 @@ async function inspectAdvancedPermission(token, c) {
   }
 }
 
-async function listRecords(token, c, forceRefresh, visibilityKey) {
+async function listRecords(token, c, forceRefresh, visibilityKey, options) {
+  options = options || {};
   // OAuth bindings can expose a per-user record set. Phone bindings use the
   // application record set and are still partitioned by bound identity so
   // permission-decorated results never leak across users.
-  const key = visibilityKey || tableCacheKey(c);
+  const cacheScope = String(options.cacheScope || 'full');
+  const key = (visibilityKey || tableCacheKey(c)) + '|records:' + cacheScope;
   const cached = !forceRefresh && fresh(recordCache, key, RECORD_CACHE_TTL);
   if (cached) return { records: cached, fromCache: true };
   if (recordInFlight[key]) return recordInFlight[key];
   recordInFlight[key] = (async () => {
     let pageToken = ''; const all = []; const seenPageTokens = {};
     do {
-      // Bitable supports up to 500 rows per page. The previous value of 100
-      // multiplied network round trips on engineering tables with many defects.
-      const suffix = '?page_size=500' + (pageToken ? '&page_token=' + encodeURIComponent(pageToken) : '');
-      const result = await request('GET', '/open-apis/bitable/v1/apps/' + encodeURIComponent(c.appToken) + '/tables/' + encodeURIComponent(c.tableId) + '/records' + suffix, { Authorization: 'Bearer ' + token });
+      const params = ['page_size=' + Math.max(20, Math.min(500, Number(options.pageSize || 500)))];
+      if (pageToken) params.push('page_token=' + encodeURIComponent(pageToken));
+      const fieldNames = (options.fieldNames || []).filter(Boolean);
+      if (fieldNames.length) params.push('field_names=' + encodeURIComponent(JSON.stringify(fieldNames)));
+      const requestPath = '/open-apis/bitable/v1/apps/' + encodeURIComponent(c.appToken) + '/tables/' + encodeURIComponent(c.tableId) + '/records?' + params.join('&');
+      const result = options.retryTransient
+        ? await requestReadWithRetry(requestPath, { Authorization: 'Bearer ' + token }, { timeoutMs: options.timeoutMs, maxAttempts: Number(options.maxAttempts || 1) })
+        : await request('GET', requestPath, { Authorization: 'Bearer ' + token });
       const data = result.data || {};
       all.push.apply(all, data.items || []);
       const nextPageToken = data.has_more ? String(data.page_token || '') : '';
@@ -470,7 +579,8 @@ async function listFields(token, c) {
   let pageToken = ''; const all = [];
   do {
     const suffix = '?page_size=500' + (pageToken ? '&page_token=' + encodeURIComponent(pageToken) : '');
-    const result = await request('GET', '/open-apis/bitable/v1/apps/' + encodeURIComponent(c.appToken) + '/tables/' + encodeURIComponent(c.tableId) + '/fields' + suffix, { Authorization: 'Bearer ' + token });
+    const requestPath = '/open-apis/bitable/v1/apps/' + encodeURIComponent(c.appToken) + '/tables/' + encodeURIComponent(c.tableId) + '/fields' + suffix;
+    const result = await requestReadWithRetry(requestPath, { Authorization: 'Bearer ' + token }, { timeoutMs: 6000, maxAttempts: 1 });
     const data = result.data || {};
     all.push.apply(all, data.items || []);
     pageToken = data.has_more ? data.page_token : '';
@@ -502,11 +612,6 @@ async function resolvedSchema(token, c) {
   const value = resolveFieldMap(items, c.fields);
   schemaCache = { key, at: Date.now(), value };
   return value;
-}
-
-function attachmentUrls(value) {
-  if (!Array.isArray(value)) return [];
-  return value.filter(Boolean).map(item => ({ name: item.name || '', fileToken: item.file_token || item.fileToken || '', url: item.url || item.tmp_url || '' }));
 }
 
 function mapStatus(value) {
@@ -602,9 +707,9 @@ function mapRecord(record, fieldMap) {
     recordId: record.record_id,
     title: description || [location, category].filter(Boolean).join(' · ') || '飞书下发整改任务',
     projectName: text(value('project')), projectCode: text(value('projectCode')), deviceName: text(value('device')),
-    location, category, level: text(value('level')), description,
+    location, category, level: text(value('level')), description, qualityIssue: description,
     deadline: timestampText(value('deadline')), feishuStatus: state.code, feishuStatusName: state.name,
-    sourceImages, closureImages: attachmentUrls(value('closureImages')),
+    sourceImages, problemPhotos: sourceImages, closureImages: attachmentUrls(value('closureImages')),
     closureNote: text(value('closureNote')), closureTime: timestampText(value('closureTime')),
     hasTaskContent: !!(description || location || category || sourceImages.length)
   };
@@ -661,8 +766,29 @@ async function updateRecord(token, c, recordId, fields) {
 }
 
 async function getRecord(token, c, recordId) {
-  const result = await request('GET', '/open-apis/bitable/v1/apps/' + encodeURIComponent(c.appToken) + '/tables/' + encodeURIComponent(c.tableId) + '/records/' + encodeURIComponent(recordId), { Authorization: 'Bearer ' + token });
-  return (result.data && result.data.record) || {};
+  try {
+    const result = await request('GET', '/open-apis/bitable/v1/apps/' + encodeURIComponent(c.appToken) + '/tables/' + encodeURIComponent(c.tableId) + '/records/' + encodeURIComponent(recordId), { Authorization: 'Bearer ' + token });
+    const record = result.data && result.data.record;
+    if (!record || record.record_id !== recordId) {
+      throw Object.assign(new Error('飞书未返回指定记录'), { feishuCode: 1254043 });
+    }
+    return record;
+  } catch (error) {
+    if (Number(error.feishuCode) === 1254043) {
+      error.code = 'FEISHU_RECORD_NOT_FOUND';
+      error.message = '当前飞书数据表中找不到这条质量问题，暂时无法读取说明和图片。请项目负责人核对原记录是否删除或迁移，并核对同步的数据表；确认后从质量检查台账重新同步任务。';
+      error.recordId = recordId;
+      error.tableId = c.tableId;
+    }
+    throw error;
+  }
+}
+
+function assertEvidenceSource(source, c) {
+  if (!source) return; // Older tasks have no provenance; keep their exact-ID lookup.
+  if (source.appToken !== c.appToken || source.tableId !== c.tableId) {
+    throw Object.assign(new Error('这条任务的来源数据表与当前飞书配置不一致，请项目负责人核对数据表配置并重新同步任务。'), { code: 'FEISHU_SOURCE_MISMATCH' });
+  }
 }
 
 function attachmentTokens(record, fieldName) {
@@ -682,7 +808,7 @@ async function verifyAttachmentWrite(token, c, recordId, fieldName, expectedToke
   throw new Error('飞书更新接口已返回成功，但再次读取记录时未找到本次上传的附件，请稍后重试核验');
 }
 
-const API_VERSION = 'feishu-user-visible-projects-v9';
+const API_VERSION = 'feishu-user-visible-projects-v14-evidence-source';
 
 function taskCacheKey(c, project) {
   return [
@@ -733,9 +859,43 @@ exports.main = async function (event) {
       const diagnosticToken = await tenantToken(c);
       return inspectAdvancedPermission(diagnosticToken, c);
     }
+    if (action === 'getTaskEvidence' && event.shareToken) {
+      // The share capability grants read access to ONE stored task only. Never
+      // use a caller-supplied record ID or attachment token with the tenant token.
+      if (!event.projectId || !event.orderId) throw new Error('缺少整改任务信息');
+      const stored = (await db.collection('quality-rectification-orders')
+        .doc(safeId(event.projectId) + '__' + safeId(event.orderId)).get()).data;
+      const hash = require('crypto').createHash('sha256').update(String(event.shareToken)).digest('hex');
+      if (!stored || !stored.shareTokenHash || hash !== stored.shareTokenHash ||
+          stored.projectId !== event.projectId || stored.id !== event.orderId) {
+        throw new Error('整改协作链接无效或已失效');
+      }
+      if (!stored.feishuRecordId) throw new Error('该任务未关联飞书记录');
+      assertEvidenceSource(stored.feishuSource, c);
+      const token = await tenantToken(c);
+      const schema = await resolvedSchema(token, c);
+      const record = await getRecord(token, c, stored.feishuRecordId);
+      if (!record.record_id) throw new Error('飞书记录不存在或无权读取');
+      const result = await resolveEvidence(mapRecord(record, schema.fields), token, request, startedAt + 24000);
+      return Object.assign({ success: true, apiVersion: API_VERSION }, result);
+    }
     const identity = await requireBoundIdentity();
-    const token = await tenantToken(c);
-    const readToken = await dataAccessToken(identity, c, token);
+    // OAuth-bound users read with their user token and do not need a tenant
+    // token first. Removing that unnecessary network hop saves several seconds
+    // on every cold start. Phone-bound users still use the application token.
+    const applicationToken = identity.authMode === 'phone' ? await tenantToken(c) : '';
+    const readToken = await dataAccessToken(identity, c, applicationToken);
+    if (action === 'getTaskEvidence') {
+      if (!event.recordId) throw new Error('缺少飞书记录编号');
+      assertEvidenceSource(event.source, c);
+      const schema = await resolvedSchema(readToken, c);
+      const record = await getRecord(readToken, c, String(event.recordId));
+      if (!record.record_id || !recordMatchResult(record, event.project || {}, schema.fields).matched) {
+        throw new Error('该飞书任务不属于当前项目和炉号，或无权读取');
+      }
+      const result = await resolveEvidence(mapRecord(record, schema.fields), readToken, request, startedAt + 24000);
+      return Object.assign({ success: true, apiVersion: API_VERSION }, result);
+    }
     const visibilitySource = identity.authMode === 'phone' ? 'phone_identity_app_token' : 'user_access_token';
     const visibilityKey = userTableCacheKey(c, identity);
     if (action === 'listProjectOptions') {
@@ -746,16 +906,30 @@ exports.main = async function (event) {
         const shared = await catalogInFlight[cacheKey];
         return withTiming(decorateCatalog(shared, identity), startedAt, true);
       }
-      // Field metadata and records are independent. Fetching them concurrently
-      // removes one full Feishu round trip from the cold-start path.
       catalogInFlight[cacheKey] = (async () => {
-        const results = await Promise.all([resolvedSchema(token, c), listRecords(readToken, c, forceRefresh, visibilityKey)]);
-        const schema = results[0];
-        const snapshot = results[1];
-        const records = snapshot.records;
+        // The picker only needs catalog text. Pulling every column also downloads
+        // large attachment metadata and was the main cause of the 15-second timeout.
+        const schema = await resolvedSchema(readToken, c);
         const fieldMap = schema.fields;
         if (!fieldMap.project) throw new Error('飞书表缺少“项目名称”列，无法生成项目选择列表');
         if (!fieldMap.device) throw new Error('飞书表缺少“炉号”列，无法生成设备选择列表');
+        const catalogFields = [
+          fieldMap.project,
+          fieldMap.manager,
+          fieldMap.device,
+          fieldMap.description,
+          fieldMap.location,
+          fieldMap.category
+        ].filter((name, index, all) => name && all.indexOf(name) === index);
+        const snapshot = await listRecords(readToken, c, forceRefresh, visibilityKey, {
+          cacheScope: 'catalog',
+          fieldNames: catalogFields,
+          pageSize: 200,
+          retryTransient: true,
+          timeoutMs: 6000,
+          maxAttempts: 1
+        });
+        const records = snapshot.records;
         const projects = buildProjectOptions(records, fieldMap);
         const value = {
           success: true,
@@ -791,12 +965,13 @@ exports.main = async function (event) {
         return withTiming(shared, startedAt, true);
       }
       taskInFlight[cacheKey] = (async () => {
-        const results = await Promise.all([resolvedSchema(token, c), listRecords(readToken, c, forceRefresh, visibilityKey)]);
-        const schema = results[0];
-        const records = results[1].records;
+        const schema = await resolvedSchema(readToken, c);
         const fieldMap = schema.fields;
         if (!fieldMap.project) throw new Error('飞书表缺少“项目名称”列');
         if (!fieldMap.device) throw new Error('飞书表缺少“炉号”列');
+        // Filter on Feishu before attachments are returned. The previous full-table
+        // scan repeatedly exceeded the Cloud Function's 30-second execution limit.
+        const records = await searchProjectRecords(readToken, c, project, fieldMap);
         const diagnostics = {
           totalRecords: records.length,
           projectName: String(project.feishuProjectName || ''),
@@ -859,14 +1034,14 @@ exports.main = async function (event) {
     if (action === 'syncClosure') {
       const payload = event.payload || {};
       if (!payload.recordId) throw new Error('缺少飞书记录 ID');
-      const schema = await resolvedSchema(token, c);
+      const schema = await resolvedSchema(readToken, c);
       const fieldMap = schema.fields;
       if (!fieldMap.closureImages) throw new Error('飞书表缺少附件列“闭环”（也可命名为“闭环照片”或“整改后照片”）');
       // Keep every attachment that was already maintained manually in Feishu.
       const currentRecord = await atStage('read', '读取飞书原记录', () => getRecord(readToken, c, payload.recordId));
       const recordProjectName = fieldMap.project ? text((currentRecord.fields || {})[fieldMap.project]).trim() : '';
       if (!recordProjectName) throw new Error('目标飞书记录缺少项目名称，不能核验编辑权限');
-      const permissionRecords = (await listRecords(readToken, c, false, visibilityKey)).records;
+      const permissionRecords = await searchProjectPermissionRecords(readToken, c, recordProjectName, fieldMap);
       requireProjectEdit(permissionRecords, recordProjectName, fieldMap, identity);
       let trustedOrder = null;
       if (payload.orderId) {
@@ -909,7 +1084,7 @@ exports.main = async function (event) {
     if (action === 'verifyClosure') {
       const payload = event.payload || {};
       if (!payload.recordId) throw new Error('缺少飞书记录 ID');
-      const schema = await resolvedSchema(token, c);
+      const schema = await resolvedSchema(readToken, c);
       const fieldMap = schema.fields;
       if (!fieldMap.closureImages) throw new Error('飞书表缺少附件列“闭环”');
       const currentRecord = await getRecord(readToken, c, payload.recordId);
@@ -934,12 +1109,16 @@ exports.main = async function (event) {
     console.error('[feishu-rectification]', action, error);
     return {
       success: false,
+      apiVersion: API_VERSION,
       error: error.message || String(error),
       stage: String(error.stage || ''),
       httpStatus: Number(error.httpStatus || 0),
       feishuCode: Number(error.feishuCode || 0),
       requestId: String(error.requestId || ''),
-      code: String(error.code || '')
+      recordId: String(error.recordId || ''),
+      tableId: String(error.tableId || ''),
+      code: String(error.code || ''),
+      durationMs: Math.max(0, Date.now() - startedAt)
     };
   }
 };

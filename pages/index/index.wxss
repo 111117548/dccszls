@@ -345,15 +345,9 @@
 .home-v7-brand>view{flex:1;min-width:0;text-align:right}
 .home-v7-brand text,.home-v7-brand label{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .home-v7-brand text{font-size:22rpx;font-weight:700}.home-v7-brand label{margin-top:2rpx;color:#8793a2;font-size:15rpx;letter-spacing:1rpx}
-.home-v7-project{display:grid;padding:14rpx 24rpx;background:#fff;grid-template-columns:minmax(0,1.45fr) minmax(0,.8fr);gap:12rpx}
-.home-v7-project>view{display:flex;min-width:0;height:74rpx;align-items:center;padding:0 18rpx;border:1rpx solid #d6e0eb;border-radius:10rpx;background:#fff}
-.home-v7-project text{flex:1;min-width:0;overflow:hidden;font-size:24rpx;white-space:nowrap;text-overflow:ellipsis}.home-v7-project label{flex:0 0 auto;margin-left:8rpx;color:#5d6b7c;font-size:26rpx}
 .home-v7-content{padding:16rpx 24rpx 28rpx}
 .home-v7-model-card{overflow:hidden;border:1rpx solid #d6e0eb;border-radius:14rpx;background:#fff;box-shadow:0 8rpx 24rpx rgba(23,50,78,.06)}
 .home-v7-toolbar{display:flex;height:76rpx;align-items:center;justify-content:space-between;padding:10rpx 14rpx 8rpx 16rpx}
-.home-v7-tabs{display:flex;padding:5rpx;border-radius:10rpx;background:#f0f3f7}
-.home-v7-tabs button{min-height:52rpx;padding:0 24rpx;color:#5d6b7c;font-size:21rpx;white-space:nowrap;background:transparent;border-radius:8rpx}
-.home-v7-tabs button.active{color:#0b4aa2;font-weight:700;background:#fff;box-shadow:0 3rpx 10rpx rgba(23,50,78,.08)}
 .home-v7-toolbar>text{max-width:180rpx;overflow:hidden;color:#8793a2;font-size:18rpx;white-space:nowrap;text-overflow:ellipsis}
 .home-v7-model{height:600rpx;overflow:hidden;background:linear-gradient(180deg,#fff,#f2f6fa)}
 .home-v7-model construction-twin-3d{display:block;width:100%;height:600rpx}.home-v7-model .model-paused{height:600rpx}
@@ -373,4 +367,45 @@
 .home-v7-stage-scroll{width:100%;white-space:nowrap}.home-v7-stage-track{display:inline-flex;min-width:100%;padding:0 14rpx 4rpx}
 .home-v7-stage-item{position:relative;display:flex;width:106rpx;flex:0 0 106rpx;flex-direction:column;align-items:center;padding:8rpx 2rpx 10rpx;border-radius:10rpx}.home-v7-stage-item:after{position:absolute;z-index:0;top:37rpx;left:80rpx;width:52rpx;height:3rpx;background:#dce5ef;content:''}.home-v7-stage-item:last-child:after{display:none}.home-v7-stage-press{background:#f0f6ff}
 .home-v7-stage-icon{position:relative;z-index:1;display:flex;width:58rpx;height:58rpx;align-items:center;justify-content:center;border:2rpx solid #bdcad8;border-radius:50%;background:#fff}.home-v7-stage-icon image{width:36rpx;height:36rpx;opacity:.65}.home-v7-stage-item>text,.home-v7-stage-item>label{display:block;overflow:hidden;width:100%;text-align:center;white-space:nowrap;text-overflow:ellipsis}.home-v7-stage-item>text{margin-top:8rpx;color:#5d6b7c;font-size:18rpx}.home-v7-stage-item>label{margin-top:2rpx;color:#8793a2;font-size:16rpx}.home-v7-stage-item.current{background:#eef5ff}.home-v7-stage-item.current .home-v7-stage-icon{border-color:#0b4aa2;box-shadow:0 0 0 5rpx #e5f0ff}.home-v7-stage-item.current .home-v7-stage-icon image{opacity:1}.home-v7-stage-item.current>text,.home-v7-stage-item.current>label{color:#0b4aa2;font-weight:700}.home-v7-stage-item.completed .home-v7-stage-icon{border-color:#16845b}.home-v7-stage-item.completed:after{background:#7dc5a7}
-@media (max-width:360px){.home-v7-brand{padding-right:20rpx;padding-left:20rpx}.home-v7-brand>image{flex-basis:238rpx;width:238rpx}.home-v7-brand label{display:none}.home-v7-project{padding-right:18rpx;padding-left:18rpx}.home-v7-content{padding-right:18rpx;padding-left:18rpx}.home-v7-model{height:560rpx}.home-v7-model construction-twin-3d,.home-v7-model .model-paused{height:560rpx}.home-v7-tabs button{padding-right:18rpx;padding-left:18rpx}.home-v7-info.selected>button{flex-basis:158rpx;margin-left:14rpx;padding-right:9rpx;padding-left:9rpx}}
+@media (max-width:360px){.home-v7-brand{padding-right:20rpx;padding-left:20rpx}.home-v7-brand>image{flex-basis:238rpx;width:238rpx}.home-v7-brand label{display:none}.home-v7-content{padding-right:18rpx;padding-left:18rpx}.home-v7-model{height:560rpx}.home-v7-model construction-twin-3d,.home-v7-model .model-paused{height:560rpx}.home-v7-info.selected>button{flex-basis:158rpx;margin-left:14rpx;padding-right:9rpx;padding-left:9rpx}}
+
+/* V9 · Ant Design Mobile inspired model-first experience. */
+.home-v7{background:var(--bg);color:var(--text)}
+.home-v7-brand{min-height:96rpx;padding:14rpx 28rpx;border-color:var(--line-soft)}
+.home-v7-brand>image{flex-basis:250rpx;width:250rpx;height:58rpx}.home-v7-brand text{font-size:21rpx;font-weight:600}.home-v7-brand label{color:var(--text-3);font-size:14rpx}
+.home-v7-content{padding:16rpx 24rpx 32rpx}
+.home-v7-model-card{border-color:var(--line-soft);border-radius:24rpx;box-shadow:var(--shadow-sm)}
+.home-v7-toolbar{height:84rpx;padding:12rpx 16rpx}.home-v7-toolbar>text{color:#8c8c8c}
+.home-v7-model{background:linear-gradient(180deg,#fff,#f7f9fc)}.home-v7-tip{border-color:var(--line-soft);color:#8c8c8c}
+.home-v7-info{margin-top:18rpx;padding:24rpx;border-radius:24rpx;background:linear-gradient(135deg,#1677ff,#4096ff);box-shadow:0 12rpx 28rpx rgba(22,119,255,.16)}.home-v7-info-head>text{font-weight:600}.home-v7-info.selected>button{color:#1677ff;border-radius:14rpx}.home-v7-overview text{font-weight:600}.home-v7-overview .warning{color:#ffd666}
+.home-v7-stage-card{margin-top:18rpx;padding-top:22rpx;border-color:var(--line-soft);border-radius:24rpx;box-shadow:var(--shadow-sm)}.home-v7-stage-head text{font-weight:600}.home-v7-stage-head label{color:#8c8c8c}.home-v7-stage-item{border-radius:14rpx}.home-v7-stage-item.current{background:#e6f4ff}.home-v7-stage-item.current .home-v7-stage-icon{border-color:#1677ff;box-shadow:0 0 0 5rpx #e6f4ff}.home-v7-stage-item.current>text,.home-v7-stage-item.current>label{color:#1677ff}.home-v7-stage-item.completed .home-v7-stage-icon{border-color:#52c41a}.home-v7-stage-item.completed:after{background:#95de64}
+.project-search-box{border-color:var(--line);border-radius:16rpx;background:#fafafa}.project-filter-tabs{padding:5rpx;border-radius:14rpx;background:#f0f0f0;gap:0}.project-filter-tabs>view{border:0;border-radius:10rpx;background:transparent}.project-filter-tabs>view.active{color:#1677ff;background:#fff;box-shadow:0 2rpx 8rpx rgba(0,0,0,.06)}.reference-project-list .project-option{border-color:var(--line-soft);border-radius:18rpx}.project-sheet-note{border-radius:14rpx;background:#fafafa}
+
+/* V10 · one project context card and one unified progress entry. */
+.home-v7-context-card{margin-top:0;margin-bottom:18rpx}
+.home-v7-context-card .home-v7-info-head>label{padding:8rpx 0 8rpx 16rpx;color:#fff;font-size:20rpx}
+.home-v7-link-press{opacity:.65}
+.home-v7-context-selectors{display:grid;margin-top:18rpx;grid-template-columns:minmax(0,1.5fr) minmax(0,.72fr);gap:12rpx}
+.home-v7-context-selectors>view{min-width:0;padding:13rpx 16rpx;border:1rpx solid rgba(255,255,255,.28);border-radius:14rpx;background:rgba(255,255,255,.12)}
+.home-v7-context-selectors>view>label{display:block;color:rgba(255,255,255,.7);font-size:17rpx}
+.home-v7-context-selectors>view>view{display:flex;align-items:center;margin-top:4rpx}
+.home-v7-context-selectors>view>view>text:first-child{flex:1;min-width:0;overflow:hidden;color:#fff;font-size:22rpx;font-weight:600;white-space:nowrap;text-overflow:ellipsis}
+.home-v7-context-selectors>view>view>text:last-child{flex:none;margin-left:8rpx;color:rgba(255,255,255,.8);font-size:22rpx}
+.home-v7-context-press{background:rgba(255,255,255,.22)!important}
+.home-v7-context-card .home-v7-overview{padding-top:18rpx;border-top:1rpx solid rgba(255,255,255,.18)}
+.home-v7-model-title{min-width:0}
+.home-v7-model-title text,.home-v7-model-title label{display:block}
+.home-v7-model-title text{font-size:23rpx;font-weight:600}
+.home-v7-model-title label{margin-top:2rpx;color:#8c8c8c;font-size:17rpx}
+.home-v7-selected-metrics{display:flex;gap:22rpx;margin-top:16rpx;color:rgba(255,255,255,.86);font-size:20rpx}
+.home-v7-selected-metrics text{padding-right:22rpx;border-right:1rpx solid rgba(255,255,255,.24)}
+.home-v7-selected-metrics text:last-child{padding-right:0;border-right:0}
+.home-v7-stage-item>label{font-size:14rpx}
+
+/* V11 · compact first screen: context, model and component stages stay together. */
+.home-v7-brand{min-height:82rpx;padding-top:9rpx;padding-bottom:9rpx}.home-v7-brand>image{height:52rpx}.home-v7-content{padding:12rpx 22rpx 24rpx}
+.home-v7-context-card{margin-bottom:12rpx;padding:16rpx 18rpx 15rpx}.home-v7-context-selectors{margin-top:0;gap:10rpx}.home-v7-context-selectors>view{padding:9rpx 13rpx}.home-v7-context-selectors>view>label{font-size:15rpx}.home-v7-context-selectors>view>view{margin-top:2rpx}.home-v7-context-selectors>view>view>text:first-child{font-size:20rpx}.home-v7-context-card .home-v7-overview{margin-top:12rpx;padding-top:12rpx}.home-v7-overview>view>label{font-size:17rpx}.home-v7-overview text{margin-top:1rpx;font-size:29rpx}.home-v7-overview .warning .unit{font-size:16rpx}
+.home-v7-model-card{border-radius:20rpx}.home-v7-toolbar{height:62rpx;padding:8rpx 14rpx}.home-v7-model-title text{font-size:21rpx}.home-v7-model-title label{margin-top:0;font-size:15rpx}.home-v7-toolbar>text{font-size:17rpx}.home-v7-model,.home-v7-model construction-twin-3d,.home-v7-model .model-paused{height:455rpx}.home-v7-tip{height:42rpx;font-size:16rpx;letter-spacing:0}
+.home-v7-stage-card{margin-top:12rpx;padding:14rpx 0 10rpx;border-radius:20rpx}.home-v7-stage-head{padding:0 18rpx 10rpx}.home-v7-stage-head text{font-size:23rpx}.home-v7-stage-head label{font-size:16rpx}.home-v7-stage-track{padding-right:10rpx;padding-left:10rpx}.home-v7-stage-item{width:100rpx;flex-basis:100rpx;padding-top:5rpx;padding-bottom:6rpx}.home-v7-stage-item:after{top:32rpx;left:76rpx;width:48rpx}.home-v7-stage-icon{width:50rpx;height:50rpx}.home-v7-stage-icon image{width:31rpx;height:31rpx}.home-v7-stage-item>text{margin-top:5rpx;font-size:17rpx}.home-v7-stage-item>label{font-size:13rpx}
+.home-v7-stage-selection{display:flex;min-height:54rpx;align-items:center;margin:0 14rpx 8rpx;padding:6rpx 12rpx;border:1rpx solid #bae0ff;border-radius:12rpx;background:#f0f7ff}.home-v7-stage-selection-main{flex:1;min-width:0}.home-v7-stage-selection-main>view{display:flex;align-items:center}.home-v7-stage-selection-main>view:first-child text{max-width:300rpx;overflow:hidden;color:#172b4d;font-size:19rpx;font-weight:600;white-space:nowrap;text-overflow:ellipsis}.home-v7-stage-selection-main>view:first-child label{margin-left:9rpx;padding:2rpx 7rpx;border-radius:999rpx;color:#8c8c8c;background:#f0f0f0;font-size:14rpx}.home-v7-stage-selection-main>view:first-child label.working{color:#ad6800;background:#fff7e6}.home-v7-stage-selection-main>view:first-child label.complete{color:#237804;background:#f6ffed}.home-v7-stage-selection-main>view:last-child{gap:16rpx;margin-top:2rpx;color:#6b7b8d;font-size:15rpx}.home-v7-stage-selection-link{flex:none;margin-left:10rpx;color:#1677ff;font-size:17rpx}.home-v7-stage-selection-press{background:#e6f4ff}
+@media (max-width:360px){.home-v7-content{padding-right:18rpx;padding-left:18rpx}.home-v7-model,.home-v7-model construction-twin-3d,.home-v7-model .model-paused{height:430rpx}.home-v7-brand{padding-right:20rpx;padding-left:20rpx}}

@@ -4,36 +4,16 @@
     <view><text>工程质量数字化平台</text><label>ENGINEERING QUALITY</label></view>
   </view>
 
-  <view class="home-v7-project">
-    <view class="home-v7-project-name" bindtap="openProjectSheet" hover-class="ux-press" role="button">
-      <text>{{project.shortName || project.name || '选择项目'}}</text><label>⌄</label>
-    </view>
-    <view class="home-v7-device" bindtap="openDeviceSheet" hover-class="ux-press" role="button">
-      <text>{{device.unitNo || device.name || '选择机组'}}</text><label>⌄</label>
-    </view>
-  </view>
-
   <view class="home-v7-content">
-    <view class="home-v7-model-card">
-      <view class="home-v7-toolbar">
-        <view class="home-v7-tabs">
-          <button class="{{modelView === 'arrival' ? 'active' : ''}}" data-view="arrival" bindtap="setModelView">到货状态</button>
-          <button class="{{modelView === 'installation' ? 'active' : ''}}" data-view="installation" bindtap="setModelView">安装进度</button>
+    <view class="home-v7-info overview home-v7-context-card">
+      <view class="home-v7-context-selectors">
+        <view catchtap="openProjectSheet" hover-class="home-v7-context-press" role="button">
+          <label>项目</label><view><text>{{project.shortName || project.name || '选择项目'}}</text><text>⌄</text></view>
         </view>
-        <text>{{modelStageName}}</text>
-      </view>
-      <view class="home-v7-model">
-        <construction-twin-3d wx:if="{{modelCanvasVisible}}" light="{{true}}" minimal="{{true}}" project-name="{{project.name}}" device-name="{{project.deviceName}}" stage-index="{{modelStageIndex}}" stage-name="{{modelStageName}}" bind:parttap="onTwinPartTap" />
-        <view wx:else class="model-paused">
-          <view class="model-paused-icon"><image src="/assets/icon-review-v1/01-esp-unit.svg" mode="aspectFit" aria-label="电除尘设备"></image></view>
-          <text>模型预览已暂停</text><label>关闭选择窗口后继续浏览</label>
+        <view catchtap="openDeviceSheet" hover-class="home-v7-context-press" role="button">
+          <label>炉号</label><view><text>{{device.unitNo || device.name || '选择炉号'}}</text><text>⌄</text></view>
         </view>
       </view>
-      <view class="home-v7-tip">拖动旋转 · 双指缩放 · 点击部件</view>
-    </view>
-
-    <view wx:if="{{!modelPartSelected}}" class="home-v7-info overview" bindtap="openModelOverview" hover-class="home-v7-info-press" role="button">
-      <view class="home-v7-info-head"><text>项目概览</text><label>{{modelView === 'arrival' ? '查看到货总览 ›' : '查看安装进度 ›'}}</label></view>
       <view class="home-v7-overview">
         <view><label>到货</label><text>{{arrivalOverallProgress}}%</text></view>
         <view><label>安装</label><text>{{installationOverallProgress}}%</text></view>
@@ -41,23 +21,36 @@
       </view>
     </view>
 
-    <view wx:else class="home-v7-info selected">
-      <view class="home-v7-selected-copy">
-        <view class="home-v7-info-head"><text>{{selectedPartName}}</text><label class="status {{selectedStatusClass}}">{{selectedStatusText}}</label></view>
-        <view class="home-v7-progress-meta"><text>{{selectedMetricLabel}}</text><label>{{selectedMetricProgress}}%</label></view>
-        <view class="home-v7-progress"><view style="width:{{selectedMetricProgress}}%"></view></view>
+    <view class="home-v7-model-card">
+      <view class="home-v7-toolbar">
+        <view class="home-v7-model-title"><text>数字孪生模型</text><label>到货与安装进度</label></view>
+        <text>{{modelStageName}}</text>
       </view>
-      <button catchtap="openSelectedPart">查看部件详情</button>
+      <view class="home-v7-model" style="height:{{modelViewportHeightPx}}px">
+        <construction-twin-3d wx:if="{{modelCanvasVisible}}" style="height:{{modelViewportHeightPx}}px" viewport-height="{{modelViewportHeightPx}}" light="{{true}}" minimal="{{true}}" animate-assembly="{{true}}" play-token="{{modelReplayToken}}" project-name="{{project.name}}" device-name="{{project.deviceName}}" stage-index="{{modelStageIndex}}" stage-name="{{modelStageName}}" bind:parttap="onTwinPartTap" />
+        <view wx:else class="model-paused" style="height:{{modelViewportHeightPx}}px">
+          <view class="model-paused-icon"><image src="/assets/icon-review-v1/01-esp-unit.svg" mode="aspectFit" aria-label="电除尘设备"></image></view>
+          <text>模型预览已暂停</text><label>关闭选择窗口后继续浏览</label>
+        </view>
+      </view>
+      <view class="home-v7-tip">进入首页自动回放施工顺序 · 拖动旋转 · 双指缩放</view>
     </view>
 
     <view class="home-v7-stage-card">
-      <view class="home-v7-stage-head"><text>13个部件进度</text><label>点击切换模型部件</label></view>
+      <view wx:if="{{!modelPartSelected}}" class="home-v7-stage-head"><text>13个部件进度</text><label>点击切换模型部件</label></view>
+      <view wx:else class="home-v7-stage-selection" catchtap="openSelectedPart" hover-class="home-v7-stage-selection-press">
+        <view class="home-v7-stage-selection-main">
+          <view><text>{{selectedPartName}}</text><label class="{{selectedStatusClass}}">{{selectedStatusText}}</label></view>
+          <view><text>到货 {{selectedStageProgress.arrivedProgress || 0}}%</text><text>安装 {{selectedStageProgress.installedProgress || 0}}%</text></view>
+        </view>
+        <text class="home-v7-stage-selection-link">管理 ›</text>
+      </view>
       <scroll-view class="home-v7-stage-scroll" scroll-x enhanced show-scrollbar="{{false}}" scroll-left="{{stageScrollLeft}}">
         <view class="home-v7-stage-track">
-          <view wx:for="{{constructionStages}}" wx:key="index" class="home-v7-stage-item {{item.index == modelStageIndex ? 'current' : ''}} {{(modelView === 'arrival' ? item.arrivedProgress : item.installedProgress) >= 100 ? 'completed' : ''}}" data-index="{{item.index}}" bindtap="onStageTap" hover-class="home-v7-stage-press">
+          <view wx:for="{{constructionStages}}" wx:key="index" class="home-v7-stage-item {{item.index == modelStageIndex ? 'current' : ''}} {{item.installedProgress >= 100 ? 'completed' : ''}}" data-index="{{item.index}}" bindtap="onStageTap" hover-class="home-v7-stage-press">
             <view class="home-v7-stage-icon"><image src="{{item.iconPath}}" mode="aspectFit" aria-label="{{item.shortName || item.name}}"></image></view>
             <text>{{item.shortName || item.name}}</text>
-            <label>{{modelView === 'arrival' ? item.arrivedProgress : item.installedProgress}}%</label>
+            <label>到{{item.arrivedProgress || 0}}% · 安{{item.installedProgress || 0}}%</label>
           </view>
         </view>
       </scroll-view>
@@ -119,15 +112,15 @@
   <view class="sheet-mask" wx:if="{{showSettings}}" bindtap="closeSettings"></view>
   <view class="bottom-sheet settings-sheet" wx:if="{{showSettings}}">
     <view class="sheet-handle"></view>
-    <view class="sheet-head"><text>AI服务配置</text><button bindtap="closeSettings">×</button></view>
+    <view class="sheet-head"><text>智能服务配置</text><button bindtap="closeSettings">×</button></view>
     <view class="service-status service-{{aiServiceStatus}}">
       <view class="service-dot"></view>
       <view class="service-copy"><text>{{aiServiceStatusText}}</text><label>API Key仅保存在云函数环境变量中，不会写入小程序</label></view>
       <button wx:if="{{aiServiceStatus === 'missing' || aiServiceStatus === 'offline'}}" bindtap="enableDemoMode">开启演示</button>
     </view>
     <view class="cloud-config-note" wx:if="{{aiServiceStatus === 'missing'}}">
-      <text>真实AI部署：ai-analyze 云函数 → 环境变量</text>
-      <label>ESP_AI_ENDPOINT　ESP_AI_API_KEY　ESP_AI_MODEL</label>
+      <text>智能服务部署：ai-analyze 云函数 → 环境变量</text>
+      <label>服务地址　服务密钥　模型名称（仅云端配置）</label>
     </view>
     <view class="provider-row"><button wx:for="{{['qwen','openai','deepseek','custom']}}" wx:key="*this" class="{{config.provider === item ? 'active' : ''}}" data-provider="{{item}}" bindtap="selectProvider">{{item}}</button></view>
     <text class="form-label">备用 API Endpoint</text><input class="field" value="{{config.endpoint}}" data-field="endpoint" bindinput="onConfigInput" />

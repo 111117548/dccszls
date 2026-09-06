@@ -59,7 +59,7 @@ function callCloudFunction(data) {
     var watchdog = setTimeout(function () {
       if (settled) return;
       settled = true;
-      reject(new Error('AI分析等待超时（65秒）。云函数可能已超时或网络连接中断，请查看 ai-analyze 云函数日志。'));
+      reject(new Error('智能分析等待超时（65秒）。云函数可能已超时或网络连接中断，请查看 ai-analyze 云函数日志。'));
     }, 65000);
 
     function finish(callback, value) {
@@ -78,7 +78,7 @@ function callCloudFunction(data) {
           return;
         }
         if (!res.result.success) {
-          finish(reject, new Error(res.result.error || 'AI分析失败'));
+          finish(reject, new Error(res.result.error || '智能分析失败'));
           return;
         }
         finish(resolve, res.result);
@@ -288,7 +288,7 @@ function getInspectionMethod(item) {
   if (/\bmm\b|毫米|±|偏差|尺寸|间距|垂直度|水平度|标高|对角线|中心线|同轴度|力矩|扭矩|张紧力|塞尺|测量|实测|焊缝高度|焊脚高度/.test(text)) {
     return { key: 'manual_measurement', name: '人工测量', aiApplicable: false, evidenceHint: '需要录入量具读数或实测值，照片只能作为辅助证据。' };
   }
-  return { key: 'visual_ai', name: '视觉AI', aiApplicable: true, evidenceHint: '可通过清晰的全景和细节照片辅助判断，最终结论仍需人工复核。' };
+  return { key: 'visual_ai', name: '智能视觉', aiApplicable: true, evidenceHint: '可通过清晰的全景和细节照片辅助判断，最终结论仍需人工复核。' };
 }
 
 function formatDate() {

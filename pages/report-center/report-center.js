@@ -1,129 +1,172 @@
 var app = getApp();
-var v3Data = require('../../utils/v3-data.js');
-var util = require('../../utils/util.js');
+
+function pad(value) { return value < 10 ? '0' + value : String(value); }
+function dateText(date) { return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()); }
+function compactItems(items) {
+  return (items || []).map(function (item) { return String(item || '').trim(); }).filter(Boolean);
+}
+function copyItems(items) { return (items || []).map(function (item) { return String(item || ''); }); }
+function mergeItems() {
+  var result = [];
+  Array.prototype.slice.call(arguments).forEach(function (items) {
+    compactItems(items).forEach(function (item) {
+      if (result.indexOf(item) < 0) result.push(item);
+    });
+  });
+  return result;
+}
+function suggestionFromProgress() {
+  if (!app.getConstructionDailySuggestions) return { todayItems: [], tomorrowItems: [], linkedStages: [], currentStageIndex: 0, currentStageName: '' };
+  try { return app.getConstructionDailySuggestions() || {}; } catch (error) {
+    console.warn('施工日报读取安装进度失败', error);
+    return { todayItems: [], tomorrowItems: [], linkedStages: [], currentStageIndex: 0, currentStageName: '' };
+  }
+}
+function progressSummary(suggestion) {
+  var stages = suggestion.linkedStages || [];
+  if (!stages.length) return '当前阶段及前序部件均已完成';
+  return '当前' + (suggestion.currentStageName || '施工阶段') + '，已带入' + stages.length + '项未完工内容';
+}
 
 Page({
+  onShareAppMessage: function () { return require('../../utils/share.js').home(); },
+
   data: {
-    project: {}, stats: {}, defects: [], inspections: [], reports: [], generating: false, reportDate: ''
+    project: {}, device: {}, reportDate: '', dateLabel: '',
+    todayItems: [''], tomorrowItems: [''], inherited: false,
+    linkedStages: [], progressSummary: '', generatedFromProgress: false,
+    savedAtLabel: '', dirty: false, saving: false, canEdit: false
   },
 
-  onShow: function () {
-    this.loadData();
-  },
+  onShow: function () { this.loadDraft(); },
+  onHide: function () { if (this.data.dirty && this.data.canEdit) this.persistDraft(true); },
 
-  loadData: function () {
+  loadDraft: function () {
     var state = app.getV3State();
     var context = app.getFoundationContext();
-    var defects = (state.defects || []).filter(function (item) { return item.projectId === context.project.id && item.deviceId === context.device.id; });
-    var inspections = (state.inspections || []).filter(function (item) { return item.projectId === context.project.id && item.deviceId === context.device.id; });
-    var reports = (state.reports || []).filter(function (item) { return item.projectId === context.project.id && item.deviceId === context.device.id; });
-    var scopedState = Object.assign({}, state, { defects: defects, inspections: inspections });
+    var now = new Date();
+    var currentDate = dateText(now);
+    var reports = (state.reports || []).filter(function (item) {
+      return item.type === 'construction_daily' && item.projectId === context.project.id && item.deviceId === context.device.id;
+    }).sort(function (a, b) { return String(b.date || '').localeCompare(String(a.date || '')); });
+    var current = reports.filter(function (item) { return item.date === currentDate; })[0];
+    var previous = reports.filter(function (item) { return item.date < currentDate; })[0];
+    var suggestion = suggestionFromProgress();
+    var suggestedToday = compactItems(suggestion.todayItems);
+    var suggestedTomorrow = compactItems(suggestion.tomorrowItems);
+    var inherited = false;
+    var todayItems;
+    var tomorrowItems;
+    if (current) {
+      todayItems = copyItems(current.todayItems);
+      tomorrowItems = copyItems(current.tomorrowItems);
+    } else if (previous && compactItems(previous.tomorrowItems).length) {
+      todayItems = mergeItems(previous.tomorrowItems, suggestedToday);
+      tomorrowItems = mergeItems(previous.tomorrowItems, suggestedTomorrow);
+      inherited = true;
+    } else {
+      todayItems = suggestedToday;
+      tomorrowItems = suggestedTomorrow;
+    }
     this.setData({
-      project: state.project,
-      stats: v3Data.getDashboardStats(scopedState),
-      defects: defects.filter(function (d) {
-        return (d.createdAt || '').indexOf(util.formatDate()) === 0;
-      }),
-      inspections: inspections,
-      reports: reports,
-      reportDate: util.formatDate()
+      project: context.project || {}, device: context.device || {}, reportDate: currentDate,
+      dateLabel: (now.getMonth() + 1) + '月' + now.getDate() + '日',
+      todayItems: todayItems.length ? todayItems : [''], tomorrowItems: tomorrowItems.length ? tomorrowItems : [''],
+      inherited: inherited, linkedStages: suggestion.linkedStages || [], progressSummary: progressSummary(suggestion),
+      generatedFromProgress: suggestedToday.length > 0, savedAtLabel: current && current.savedAtLabel || '', dirty: false,
+      canEdit: app.canEditCurrentProject()
     });
   },
 
-  generateDailyReport: function () {
-    var self = this;
-    if (this.data.generating) return;
-    var defects = this.data.defects;
-    if (!defects.length) {
-      wx.showToast({ title: '今日暂无缺陷数据', icon: 'none' });
+  mergeLatestProgress: function () {
+    if (!this.data.canEdit) return;
+    var suggestion = suggestionFromProgress();
+    var todayItems = mergeItems(this.data.todayItems, suggestion.todayItems);
+    var tomorrowItems = mergeItems(this.data.tomorrowItems, suggestion.tomorrowItems);
+    this.setData({
+      todayItems: todayItems.length ? todayItems : [''],
+      tomorrowItems: tomorrowItems.length ? tomorrowItems : [''],
+      linkedStages: suggestion.linkedStages || [],
+      progressSummary: progressSummary(suggestion),
+      generatedFromProgress: compactItems(suggestion.todayItems).length > 0,
+      dirty: true
+    });
+    wx.showToast({ title: compactItems(suggestion.todayItems).length ? '已同步最新进度' : '前序工作均已完成', icon: 'none' });
+  },
+
+  onItemInput: function (event) {
+    var section = event.currentTarget.dataset.section;
+    var index = Number(event.currentTarget.dataset.index || 0);
+    var field = section === 'tomorrow' ? 'tomorrowItems' : 'todayItems';
+    var items = copyItems(this.data[field]);
+    items[index] = event.detail.value;
+    var changes = { dirty: true };
+    changes[field] = items;
+    this.setData(changes);
+  },
+
+  addItem: function (event) {
+    var field = event.currentTarget.dataset.section === 'tomorrow' ? 'tomorrowItems' : 'todayItems';
+    var items = copyItems(this.data[field]);
+    items.push('');
+    var changes = { dirty: true };
+    changes[field] = items;
+    this.setData(changes);
+  },
+
+  removeItem: function (event) {
+    var field = event.currentTarget.dataset.section === 'tomorrow' ? 'tomorrowItems' : 'todayItems';
+    var index = Number(event.currentTarget.dataset.index || 0);
+    var items = copyItems(this.data[field]);
+    items.splice(index, 1);
+    if (!items.length) items.push('');
+    var changes = { dirty: true };
+    changes[field] = items;
+    this.setData(changes);
+  },
+
+  saveDraft: function () { this.persistDraft(false); },
+
+  persistDraft: function (silent) {
+    if (this.data.saving || !this.data.canEdit) {
+      if (!silent && !this.data.canEdit) wx.showToast({ title: '当前项目仅可查看', icon: 'none' });
       return;
     }
-
-    this.setData({ generating: true });
-    wx.showLoading({ title: '生成安装质检日报...' });
-
-    var major = 0, moderate = 0, minor = 0;
-    defects.forEach(function (d) {
-      if (d.severity === 'major') major++;
-      else if (d.severity === 'moderate') moderate++;
-      else minor++;
-    });
-    var fileIDs = defects.map(function (d) { return d.imageFileID || ''; }).filter(Boolean);
-
-    wx.cloud.callFunction({
-      name: 'generate-report',
-      data: {
-        reportType: 'daily',
-        reportData: {
-          project: this.data.project.name,
-          date: util.formatDate(),
-          inspector: '项目质量管理组',
-          area: 'G793四室五电场安装区域',
-          drawingNo: this.data.project.drawingNo,
-          layout: this.data.project.layout,
-          stage: this.data.project.stage,
-          device: this.data.project.deviceName,
-          inspectionCount: this.data.stats.inspectionCount,
-          photoCount: this.data.stats.photoCount
-        },
-        defects: defects,
-        majorCount: major,
-        moderateCount: moderate,
-        minorCount: minor,
-        photoFileIDs: fileIDs
-      },
-      success: function (res) {
-        wx.hideLoading();
-        self.setData({ generating: false });
-        if (res.result && res.result.success) {
-          var state = app.getV3State();
-          var report = {
-            id: 'RP-' + Date.now(), name: '低低温电除尘AI安装质量检查日报',
-            projectId: state.project.id, deviceId: state.project.deviceId || '',
-            date: util.formatDate(), fileID: res.result.fileID,
-            fileName: res.result.fileName, status: 'generated'
-          };
-          state.reports.unshift(report);
-          app.saveV3State();
-          app.syncReportToCloud(report);
-          self.loadData();
-          self.openReportFile(res.result.fileID);
-        } else {
-          wx.showToast({ title: '报告生成失败', icon: 'none' });
-        }
-      },
-      fail: function () {
-        wx.hideLoading();
-        self.setData({ generating: false });
-        wx.showToast({ title: '请部署报告云函数', icon: 'none' });
-      }
-    });
+    var state = app.getV3State();
+    var context = app.getFoundationContext();
+    var todayItems = compactItems(this.data.todayItems);
+    var tomorrowItems = compactItems(this.data.tomorrowItems);
+    var now = new Date();
+    var timeLabel = pad(now.getHours()) + ':' + pad(now.getMinutes());
+    var id = ['DAILY', context.project.id, context.device.id, this.data.reportDate].join('-');
+    var report = {
+      id: id, type: 'construction_daily', name: '施工日报', status: 'draft',
+      projectId: context.project.id, projectName: context.project.name,
+      deviceId: context.device.id, deviceName: context.device.name,
+      date: this.data.reportDate, todayItems: todayItems, tomorrowItems: tomorrowItems,
+      generationSource: 'construction_progress',
+      currentStageIndex: Number((suggestionFromProgress()).currentStageIndex || 0),
+      linkedStages: (this.data.linkedStages || []).map(function (item) { return Object.assign({}, item); }),
+      savedAt: Date.now(), savedAtLabel: timeLabel
+    };
+    state.reports = state.reports || [];
+    var index = state.reports.findIndex(function (item) { return item.id === id; });
+    if (index >= 0) state.reports[index] = report;
+    else state.reports.unshift(report);
+    this.setData({ saving: true });
+    app.saveV3State();
+    app.syncReportToCloud(report).catch(function (error) { console.warn('施工日报云端暂存失败', error); });
+    this.setData({ saving: false, dirty: false, savedAtLabel: timeLabel, todayItems: todayItems.length ? todayItems : [''], tomorrowItems: tomorrowItems.length ? tomorrowItems : [''] });
+    if (!silent) wx.showToast({ title: '日报已暂存', icon: 'success' });
   },
 
-  openReport: function (e) {
-    this.openReportFile(e.currentTarget.dataset.fileid);
-  },
-
-  openReportFile: function (fileID) {
-    if (!fileID) return;
-    wx.showLoading({ title: '打开报告...' });
-    wx.cloud.getTempFileURL({
-      fileList: [fileID],
-      success: function (res) {
-        var url = res.fileList && res.fileList[0] && res.fileList[0].tempFileURL;
-        if (!url) { wx.hideLoading(); return; }
-        wx.downloadFile({
-          url: url,
-          success: function (downloadRes) {
-            wx.hideLoading();
-            if (downloadRes.statusCode === 200) {
-              wx.openDocument({ filePath: downloadRes.tempFilePath, fileType: 'docx', showMenu: true });
-            }
-          },
-          fail: function () { wx.hideLoading(); }
-        });
-      },
-      fail: function () { wx.hideLoading(); }
-    });
+  copyReport: function () {
+    var todayItems = compactItems(this.data.todayItems);
+    var tomorrowItems = compactItems(this.data.tomorrowItems);
+    var lines = ['今日施工：'];
+    todayItems.forEach(function (item, index) { lines.push((index + 1) + '、' + item); });
+    lines.push('明日计划：');
+    tomorrowItems.forEach(function (item, index) { lines.push((index + 1) + '、' + item); });
+    wx.setClipboardData({ data: lines.join('\n'), success: function () { wx.showToast({ title: '日报内容已复制', icon: 'success' }); } });
   }
 });

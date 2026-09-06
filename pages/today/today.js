@@ -6,6 +6,8 @@ function todayLabel() {
 }
 
 Page({
+  onShareAppMessage: function () { return require('../../utils/share.js').home(); },
+
   data: {
     dateLabel: '', total: 0,
     logisticsCount: 0, logisticsStageIndex: 1, logisticsText: '',

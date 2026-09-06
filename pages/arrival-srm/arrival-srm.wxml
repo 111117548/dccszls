@@ -1,26 +1,17 @@
 <view class="screen arrival-screen">
-  <view class="context-bar"><text class="context-icon">▥</text><text class="context-name">{{project.name}} · {{device.name}}</text></view>
-  <view class="page-hero arrival-hero">
-    <text class="page-hero-title">设备到货台账</text>
-    <text class="page-hero-subtitle">先导入需求总清单，再导入实际到货清单；系统按箱号自动匹配、去重并预警。</text>
-  </view>
-  <view wx:if="{{importingType}}" class="processing-card"><view class="processing-dot"></view><text>{{progressText}}</text></view>
-  <view class="panel source-panel">
-    <view class="panel-heading"><view><text class="panel-title">需求基准</text><text class="panel-copy">总数由清单自动提取，无需逐个填写</text></view><text class="status-tag {{demandReady ? 'ready' : ''}}">{{demandReady ? '已建立' : '未导入'}}</text></view>
-    <view wx:if="{{demandReady}}" class="file-card">
-      <view class="file-icon">XLS</view>
-      <view class="file-main"><text class="file-name">{{ledger.demand.fileName}}</text><text class="file-meta">{{ledger.totalPackages}} 个箱件 · {{ledger.detailLineCount}} 条部件明细</text></view>
+  <view class="panel overview-panel arrival-overview-card">
+    <view class="overview-head">
+      <view>
+        <text class="overview-eyebrow">到货概况</text>
+        <text class="panel-title">设备到货台账</text>
+        <text class="panel-copy">需求基准与各部件到货数量自动汇总</text>
+      </view>
+      <view class="overview-rate-box">
+        <text class="rate-number">{{demandReady ? ledger.completionLabel : '0%'}}</text>
+        <label>{{demandReady ? '台账已建立' : '待导入清单'}}</label>
+      </view>
     </view>
-    <view class="button-row">
-      <button class="outline-btn import-button" loading="{{importingType === 'demand'}}" disabled="{{!!importingType}}" bindtap="chooseDemandFile"><text>{{demandReady ? '更换需求清单' : '导入需求清单'}}</text></button>
-      <button class="primary-btn import-button {{!demandReady ? 'is-locked' : ''}}" loading="{{importingType === 'arrival'}}" disabled="{{!!importingType}}" bindtap="chooseArrivalFile"><text>导入到货清单</text></button>
-    </view>
-    <view class="import-help"><text class="import-help-icon">i</text><text>支持 .xls、.xlsx（不超过 15MB），请从微信聊天或文件传输助手中选择。</text></view>
-    <text wx:if="{{!canEdit}}" class="permission-note">当前项目仅可查看，项目负责人可导入清单。</text>
-  </view>
-  <block wx:if="{{demandReady}}">
-    <view class="panel overview-panel">
-      <view class="overview-head"><view><text class="panel-title">总体到货进度</text><text class="panel-copy">以唯一箱号为统计口径</text></view><text class="rate-number">{{ledger.completionLabel}}</text></view>
+    <block wx:if="{{demandReady}}">
       <view class="progress-track"><view class="progress-fill" style="width: {{ledger.completionRate}}%;"></view></view>
       <view class="kpi-row">
         <view><text>需求</text><label>{{ledger.totalPackages}}</label><text class="kpi-unit">箱</text></view>
@@ -28,22 +19,44 @@
         <view><text>未到</text><label class="warning-number">{{ledger.remainingPackages}}</label><text class="kpi-unit">箱</text></view>
         <view><text>待归类</text><label>{{ledger.unmatchedPackages}}</label><text class="kpi-unit">箱</text></view>
       </view>
+    </block>
+    <view wx:else class="overview-empty-tip">导入一次需求总清单后，即可按部件管理到货并自动形成总体进度。</view>
+  </view>
+  <view wx:if="{{importing}}" class="processing-card"><view class="processing-dot"></view><text>{{progressText}}</text></view>
+
+  <view class="panel source-panel">
+    <view class="panel-heading">
+      <view><text class="panel-title">需求总清单</text><text class="panel-copy">自动提取箱号、部件与需求数量</text></view>
+      <text class="status-tag {{demandReady ? 'ready' : ''}}">{{demandReady ? '已建立' : '未导入'}}</text>
     </view>
-    <view class="section-heading-out"><text>分阶段到货</text><label>到货率自动驱动发货预警</label></view>
+    <view wx:if="{{demandReady}}" class="file-card">
+      <view class="file-icon">XLS</view>
+      <view class="file-main"><text class="file-name">{{ledger.demand.fileName}}</text><text class="file-meta">{{ledger.totalPackages}} 个箱件 · {{ledger.detailLineCount}} 条部件明细</text></view>
+    </view>
+    <button class="primary-btn demand-button" loading="{{importing}}" disabled="{{importing || !canEdit}}" bindtap="chooseDemandFile">{{demandReady ? '更换需求总清单' : '导入需求总清单'}}</button>
+    <view class="import-help"><text class="import-help-icon">i</text><text>支持 .xls、.xlsx（不超过 15MB），从微信聊天或文件传输助手中选择。</text></view>
+    <text wx:if="{{!canEdit}}" class="permission-note">当前项目仅可查看，项目负责人可维护总清单。</text>
+  </view>
+
+  <block wx:if="{{demandReady}}">
+    <view class="section-heading-out"><text>分阶段到货</text><label>点击部件填写或导入实际到货</label></view>
     <view class="panel stage-panel">
       <block wx:for="{{ledger.stageSummaries}}" wx:key="stageIndex">
-        <view class="stage-row">
+        <view class="stage-row" data-index="{{item.stageIndex}}" bindtap="openStage" hover-class="ux-press">
           <view class="stage-index">{{item.stageIndex || '?'}}</view>
           <view class="stage-main"><view class="stage-copy"><text>{{item.stageName}}</text><label>{{item.arrivedPackages}} / {{item.plannedPackages}}箱</label></view><view class="mini-track"><view class="mini-fill" style="width: {{item.completionRate}}%;"></view></view></view>
-          <text class="stage-rate">{{item.completionLabel}}</text>
+          <view class="stage-tail"><text class="stage-rate">{{item.completionLabel}}</text><label>管理 ›</label></view>
         </view>
       </block>
     </view>
-    <view wx:if="{{ledger.unmatchedReceipts.length}}" class="panel warning-panel"><text class="warning-title">有 {{ledger.unmatchedReceipts.length}} 个到货箱号未在需求总清单中找到</text><text class="warning-copy">请核对箱号或更新需求总清单，未匹配项目不会计入进度。</text></view>
-    <view wx:if="{{ledger.receiptImports.length}}" class="section-heading-out"><text>最近导入</text><label>重复清单不会二次累计</label></view>
-    <view wx:if="{{ledger.receiptImports.length}}" class="panel history-panel">
-      <block wx:for="{{ledger.receiptImports}}" wx:key="id"><view class="history-row"><view><text class="history-name">{{item.fileName}}</text><text class="history-time">{{item.timeLabel}}</text></view><view class="history-result"><text>新增 {{item.addedPackages}}</text><label wx:if="{{item.duplicatePackages || item.unmatchedPackages}}">重复 {{item.duplicatePackages}} · 未匹配 {{item.unmatchedPackages}}</label></view></view></block>
+
+    <view wx:if="{{ledger.receiptImports.length}}" class="section-heading-out"><text>最近到货导入</text><label>重复文件不会重复累计</label></view>
+    <view wx:if="{{ledger.receiptImports.length}}" class="panel import-history-panel">
+      <view wx:for="{{ledger.receiptImports}}" wx:key="id" class="import-history-row">
+        <view><text>{{item.fileName}}</text><label>{{item.importScopeLabel}} · {{item.importedAtLabel}}</label><label wx:if="{{item.stageSummaryText}}">{{item.stageSummaryText}}</label></view>
+        <view><text>新增 {{item.addedPackages}} 箱</text><label>匹配{{item.matchedDemandPackages || item.matchedPackages}} · 未匹配{{item.unmatchedPackages}}</label></view>
+      </view>
     </view>
   </block>
-  <view wx:else class="empty-card"><view class="empty-icon">▦</view><text class="empty-title">先导入一份需求总清单</text><text class="empty-copy">支持 .xls 和 .xlsx。系统会自动读取箱号、部件名称、数量与重量，并建立到货基准。</text></view>
+
 </view>

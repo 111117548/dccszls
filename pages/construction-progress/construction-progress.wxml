@@ -1,10 +1,8 @@
 <view class="screen warning-screen">
-  <view class="context-bar"><text class="context-icon">▥</text><text class="context-name">{{projectName}} · {{deviceName}}</text></view>
-
   <view class="stage-card">
     <view class="card-head">
-      <view><text class="stage-title">{{stage.name}}</text><text class="stage-source">数据来源：{{summarySource}}</text></view>
-      <text class="mode-chip {{progressKind === '预测' ? 'forecast' : ''}}">{{progressKind}}进度</text>
+      <view><text class="card-eyebrow">部件概况</text><text class="stage-title">{{stage.name}}</text><text class="stage-source">数据来源：{{summarySource}}</text></view>
+      <text class="mode-chip {{progressKind === '预测' ? 'forecast' : ''}}">安装{{progressKind}}进度</text>
     </view>
 
     <view class="core-metrics">
@@ -13,6 +11,7 @@
       <view><text>安装</text><label>{{displayProgress}}</label><text class="metric-unit">%</text></view>
     </view>
 
+    <text wx:if="{{metric.migrationNote}}" class="stage-source">{{metric.migrationNote}}</text>
     <view class="main-progress"><view style="width:{{displayProgress}}%"></view></view>
     <view class="progress-caption">
       <text wx:if="{{mode === 'forecast'}}">实际 {{actualProgress}}% · 按每日 {{projection.dailyPercent}}% 推演</text>
@@ -26,16 +25,37 @@
       <button wx:if="{{activeRatioAlert}}" loading="{{handlingAlert}}" bindtap="handleAlert">已安排</button>
     </view>
 
-    <view class="summary-actions">
-      <text bindtap="toggleCorrection">{{correctionOpen ? '收起校正' : '调整汇总数量'}}</text>
-      <text bindtap="openArrivalLedger">查看到货清单 ›</text>
-    </view>
+    <view class="summary-actions"><button bindtap="openArrivalLedger">查看总体到货台账</button></view>
+  </view>
 
-    <view wx:if="{{correctionOpen}}" class="correction-box">
-      <view class="compact-input"><text>需求数量</text><input type="digit" value="{{correctionForm.demand}}" data-field="demand" bindinput="onCorrectionInput" /></view>
-      <view class="compact-input"><text>到货数量</text><input type="digit" value="{{correctionForm.arrival}}" data-field="arrival" bindinput="onCorrectionInput" /></view>
-      <view class="correction-buttons"><button class="text-button" wx:if="{{metric.summaryOverrideEnabled}}" bindtap="restoreManifest">恢复清单</button><button class="outline-button" bindtap="saveCorrection">保存校正</button></view>
+  <view class="manage-card arrival-manage-card">
+    <view class="manage-head"><view><text>到货管理</text><label>当前部件的到货会自动汇总至总台账</label></view></view>
+    <view wx:if="{{!hasManifest}}" class="stage-lock">
+      <text>尚未建立需求总清单，无法确认本部件的需求箱数。</text>
+      <button wx:if="{{canManage}}" bindtap="openArrivalLedger">先导入需求总清单</button>
     </view>
+    <block wx:else>
+      <view class="mode-tabs arrival-tabs">
+        <view class="{{arrivalMode === 'manual' ? 'active' : ''}}" data-mode="manual" bindtap="switchArrivalMode">手工填报</view>
+        <view class="{{arrivalMode === 'import' ? 'active' : ''}}" data-mode="import" bindtap="switchArrivalMode">导入到货清单</view>
+      </view>
+      <view wx:if="{{arrivalMode === 'manual'}}" class="mode-form">
+        <view class="form-line"><view><text>累计到货数量</text><label>本部件需求共 {{demandValue}} 箱</label></view><view class="quantity-input"><input type="number" value="{{arrivalForm.quantity}}" bindinput="onArrivalInput" /><text>箱</text></view></view>
+        <view class="arrival-actual-progress">
+          <view><text>到货实际进度</text><label>{{arrivalProgress}}%</label></view>
+          <view class="arrival-actual-track"><view style="width:{{arrivalProgress}}%"></view></view>
+        </view>
+        <view class="form-tip">填写现场实际累计数量，可对清单识别结果进行校正；保存后同步更新本部件及总体到货进度。</view>
+        <button class="save-button" loading="{{arrivalSaving}}" disabled="{{arrivalSaving || !canManage}}" bindtap="saveArrivalQuantity">保存到货数量</button>
+      </view>
+      <view wx:else class="arrival-import-box">
+        <text class="arrival-import-title">导入实际到货清单</text>
+        <text class="arrival-import-copy">系统自动识别货品和箱号，匹配到对应部件并去重；同一车包含多个部件时会分别计入。</text>
+        <text wx:if="{{arrivalImporting}}" class="arrival-progress">{{arrivalProgressText}}</text>
+        <button class="save-button" loading="{{arrivalImporting}}" disabled="{{arrivalImporting || !canManage}}" bindtap="importArrivalFile">选择 Excel 到货清单</button>
+      </view>
+      <text wx:if="{{!canManage}}" class="permission-tip">当前项目仅可查看，项目负责人可以维护到货。</text>
+    </block>
   </view>
 
   <view class="manage-card">

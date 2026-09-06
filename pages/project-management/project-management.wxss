@@ -68,3 +68,8 @@
   .form-panel{left:12rpx;right:12rpx;padding-left:22rpx;padding-right:22rpx}
   .form-head{margin-left:-22rpx;margin-right:-22rpx;padding-left:22rpx;padding-right:22rpx}
 }
+
+/* Ant-style project administration. */
+.manage-page{background:var(--bg);color:var(--text)}
+.project-card,.device-card,.form-panel{border-color:var(--line-soft);border-radius:24rpx;box-shadow:var(--shadow-sm)}
+.project-card.active,.device-card.active{border-color:#69b1ff;background:#f5faff}.project-card button,.device-card button,.section-head button{border-radius:14rpx}.form-field input,.form-field picker view{border-color:var(--line);border-radius:16rpx;background:#fafafa}.form-panel .save{border-radius:16rpx;background:#1677ff;box-shadow:none}

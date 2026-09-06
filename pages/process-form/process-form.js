@@ -2,6 +2,8 @@ var app = getApp();
 var forms = require('../../utils/process-forms.js');
 
 Page({
+  onShareAppMessage: function () { return require('../../utils/share.js').home(); },
+
   data: {
     form: {}, record: {}, groups: [], chamberOptions: ['A1','A2','B1','B2'],
     chamberIndex: 0, resultOptions: ['请选择','符合','不符合'], resultIndex: 0,

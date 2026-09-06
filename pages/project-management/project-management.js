@@ -9,6 +9,8 @@ function emptyDevice(projectId) {
 }
 
 Page({
+  onShareAppMessage: function () { return require('../../utils/share.js').home(); },
+
   data: {
     projects: [], currentProjectId: '', devices: [], currentDeviceId: '',
     showProjectForm: false, showDeviceForm: false,

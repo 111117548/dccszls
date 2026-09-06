@@ -2,6 +2,8 @@ var app = getApp();
 var forms = require('../../utils/process-forms.js');
 
 Page({
+  onShareAppMessage: function () { return require('../../utils/share.js').home(); },
+
   data: {
     project: {}, device: {}, stage: {}, forms: forms.FORMS, displayForms: forms.FORMS,
     records: [], recordMap: {}, completedCount: 0, pendingCount: forms.FORMS.length,

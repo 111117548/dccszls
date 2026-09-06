@@ -15,16 +15,21 @@ function sameFeishuValue(left, right) {
 // Keeping a compact snapshot prevents an older local/cloud task from replacing
 // a Feishu task's title, location or level after a later bootstrap.
 function makeFeishuSnapshot(task, context) {
-  var title = task.title || [task.location, task.category].filter(Boolean).join(' · ') || '飞书下发整改任务';
+  var description = task.qualityIssue || task.description || '';
+  var sourceImages = task.problemPhotos || task.sourceImages || [];
+  var title = task.title || description || [task.location, task.category].filter(Boolean).join(' · ') || '飞书下发整改任务';
   return {
     title: title,
+    description: description,
+    qualityIssue: description,
     deviceName: task.deviceName || context.deviceName || '',
     positionCode: task.location || '',
     inspectionMethodName: '飞书整改通知',
     deadline: task.deadline || '',
-    sourceImageFileID: (task.sourceImages && task.sourceImages[0] && task.sourceImages[0].url) || '',
+    sourceImageFileID: (sourceImages[0] && sourceImages[0].url) || '',
     sourceImageLocal: '',
-    sourceImages: task.sourceImages || [],
+    sourceImages: sourceImages,
+    problemPhotos: sourceImages,
     closureImages: task.closureImages || [],
     item: {
       defectId: 'FEISHU-' + task.recordId + '-ITEM-01',
@@ -32,7 +37,7 @@ function makeFeishuSnapshot(task, context) {
       systemName: task.location || '',
       severity: task.level || '',
       level: task.level || '',
-      description: task.description || '',
+      description: description,
       suggestion: '',
       positionCode: task.location || ''
     }
@@ -50,6 +55,8 @@ function applyFeishuSnapshot(order) {
     deadline: snapshot.deadline || order.deadline,
     sourceImageFileID: snapshot.sourceImageFileID || '',
     sourceImageLocal: '',
+    sourceImages: snapshot.sourceImages || snapshot.problemPhotos || order.sourceImages || [],
+    problemPhotos: snapshot.problemPhotos || snapshot.sourceImages || order.problemPhotos || [],
     items: snapshot.item ? [Object.assign({}, snapshot.item)] : (order.items || []),
     defectIds: []
   });
@@ -271,6 +278,15 @@ App({
       (local || []).forEach(function (item) { if (item && item.id && !map[item.id]) output.push(item); });
       return output;
     }
+    // Old cloud records may still reference a merged stage ID.
+    var catalog = require('./utils/stage-catalog');
+    function canonicalReferences(value) {
+      if (!value || typeof value !== 'object') return;
+      if (value.stageId) value.stageId = catalog.canonicalId(value.stageId);
+      if (value.constructionStageId) value.constructionStageId = catalog.canonicalId(value.constructionStageId);
+      Object.keys(value).forEach(function (key) { if (value[key] && typeof value[key] === 'object') canonicalReferences(value[key]); });
+    }
+    canonicalReferences(cloudState);
     state.defects = merge(state.defects, cloudState.defects);
     state.inspections = merge(state.inspections, cloudState.inspections);
     state.reports = merge(state.reports, cloudState.reports);
@@ -428,6 +444,8 @@ App({
         syncedAt: result.syncedAt || '',
         fromCache: !!result.fromCache,
         fromClientCache: !!result.fromClientCache,
+        staleClientCache: !!result.staleClientCache,
+        refreshError: result.refreshError || '',
         durationMs: Number(result.durationMs || 0)
       };
     });
@@ -512,6 +530,10 @@ App({
     return v4Foundation.getStageProgressDetail(this.getFoundationState(), stageIndex);
   },
 
+  getConstructionDailySuggestions: function () {
+    return v4Foundation.getDailyReportSuggestions(this.getFoundationState());
+  },
+
   getArrivalLedger: function () {
     return v4Foundation.getArrivalLedgerDetail(this.getFoundationState());
   },
@@ -550,6 +572,25 @@ App({
       currentDeviceId: state.currentDeviceId
     }).then(this._refreshSyncStatus.bind(this)).catch(function (error) {
       console.warn('实际到货清单云端同步失败，已保存在本机', error);
+    });
+    return detail;
+  },
+
+  updateStageArrivalQuantity: function (stageIndex, quantity) {
+    if (!this.requireCurrentProjectEdit()) return null;
+    var state = this.getFoundationState();
+    var contextBefore = v4Foundation.getContext(state);
+    var detail = v4Foundation.applyStageArrivalQuantity(state, stageIndex, quantity, this.globalData.currentUser);
+    this._syncLegacyProjectContext();
+    this.saveFoundationState();
+    this.saveV3State();
+    cloudLedger.syncFoundation(contextBefore.project.id, {
+      projects: state.projects,
+      devices: state.devices,
+      deviceStates: state.deviceStates,
+      currentDeviceId: state.currentDeviceId
+    }).then(this._refreshSyncStatus.bind(this)).catch(function (error) {
+      console.warn('手工到货进度云端同步失败，已保存在本机', error);
     });
     return detail;
   },
@@ -874,11 +915,11 @@ App({
       shareToken: v3Data.createShareToken(),
       sourceInspectionId: inspection.id,
       sourceHistoryRecordId: historyRecord.id,
-      title: (historyRecord.areaName || 'AI质检') + '整改清单',
+      title: (historyRecord.areaName || '智能质检') + '整改清单',
       deviceName: (defects[0] && defects[0].deviceName) || historyRecord.areaName || '',
       positionCode: historyRecord.positionCode || '',
       inspectionItemId: historyRecord.inspectionItemId || '',
-      inspectionMethodName: historyRecord.inspectionMethodName || '视觉AI',
+      inspectionMethodName: historyRecord.inspectionMethodName || '智能视觉',
       items: (defects || []).map(function (defect) {
         return {
           defectId: defect.id, name: defect.name, severity: defect.severity, level: defect.level,
@@ -923,23 +964,11 @@ App({
     if (!context.feishuProjectName || !context.feishuDeviceName) {
       return Promise.reject(new Error('请先在首页从飞书项目列表选择项目和炉号'));
     }
-    var projectSnapshot = Object.assign({}, this.getV3State().project);
-    return Promise.all([
-      feishuRectification.pullTasks(context, options || {}),
-      cloudLedger.bootstrap(projectSnapshot)
-    ]).then(function (results) {
-      var result = results[0];
-      var bootstrapResult = results[1];
-      if (bootstrapResult && bootstrapResult.actor) {
-        self.globalData.currentUser = Object.assign({}, self.globalData.currentUser, {
-          id: bootstrapResult.actor.openId || self.globalData.currentUser.id,
-          name: bootstrapResult.actor.name || self.globalData.currentUser.name,
-          role: bootstrapResult.actor.role || self.globalData.currentUser.role,
-          roleName: bootstrapResult.actor.roleName || self.globalData.currentUser.roleName,
-          bound: true
-        });
-      }
-      self._mergeCloudState(bootstrapResult && bootstrapResult.state || {});
+    // Pulling the quality ledger used to be coupled with the Feishu request via
+    // Promise.all. A slow quality-ledger bootstrap therefore made a successful
+    // Feishu read appear as “飞书同步失败”. The Feishu bridge validates binding
+    // and permissions independently, so only its result should gate this action.
+    return feishuRectification.pullTasks(context, options || {}).then(function (result) {
       var state = self.getV3State();
       var fetchedTasks = Array.isArray(result.tasks) ? result.tasks : [];
       var fetchedIds = {};
@@ -974,6 +1003,9 @@ App({
           collaborationMode: 'OPEN_LINK',
           sourceType: 'FEISHU_BITABLE',
           feishuRecordId: task.recordId,
+          feishuSource: result.diagnostics && result.diagnostics.appToken && result.diagnostics.tableId
+            ? { appToken: result.diagnostics.appToken, tableId: result.diagnostics.tableId }
+            : (previous && previous.feishuSource || null),
           feishuProjectCode: task.projectCode || '',
           feishuStatus: task.feishuStatus,
           feishuStatusName: task.feishuStatusName,
@@ -1026,6 +1058,8 @@ App({
         syncedAt: result.syncedAt || '',
         fromCache: !!result.fromCache,
         fromClientCache: !!result.fromClientCache,
+        staleClientCache: !!result.staleClientCache,
+        refreshError: result.refreshError || '',
         durationMs: Number(result.durationMs || 0)
       };
     });
@@ -1147,14 +1181,41 @@ App({
   },
 
   prepareRectificationShare: function (orderId) {
+    var self = this;
     if (!this.canEditCurrentProject()) return Promise.reject(new Error('该项目仅可查看，不能创建整改分享链接'));
     var order = this.getRectificationOrder(orderId);
     if (!order) return Promise.reject(new Error('整改单不存在'));
     if (!order.shareToken) return Promise.reject(new Error('整改单缺少开放协作令牌'));
-    var cloudOrder = Object.assign({}, order);
-    delete cloudOrder.sourceImageLocal;
-    return cloudLedger.createRectificationOrder(order.projectId, cloudOrder).then(this._refreshSyncStatus.bind(this)).then(function () {
-      return { ready: true, order: order };
+    // Background enqueue success does NOT prove the recipient can read a task.
+    // Sharing needs a confirmed write, followed by a read using the actual link.
+    var upload = Promise.resolve();
+    if (order.sourceImageLocal && !order.sourceImageFileID) {
+      upload = new Promise(function (resolve, reject) {
+        if (!wx.cloud || !wx.cloud.uploadFile) { reject(new Error('云能力不可用，无法上传问题照片')); return; }
+        wx.cloud.uploadFile({
+          cloudPath: 'rectifications/' + order.projectId + '/' + order.id + '/source.jpg',
+          filePath: order.sourceImageLocal,
+          success: function (result) {
+            if (!result.fileID) { reject(new Error('问题照片上传失败，请重试')); return; }
+            order.sourceImageFileID = result.fileID;
+            self.saveV3State();
+            resolve();
+          },
+          fail: function () { reject(new Error('问题照片上传失败，请检查网络后重试')); }
+        });
+      });
+    }
+    return upload.then(function () {
+      var cloudOrder = Object.assign({}, order);
+      delete cloudOrder.sourceImageLocal;
+      return cloudLedger.ensureRectificationOrder(order.projectId, cloudOrder);
+    }).then(function () {
+      return cloudLedger.getOpenRectification(order.projectId, order.id, order.shareToken);
+    }).then(function (result) {
+      if (!result.order || result.order.id !== order.id || result.order.projectId !== order.projectId) {
+        throw new Error('云端任务尚未就绪，请重新同步后分享');
+      }
+      return { ready: true, order: Object.assign({}, result.order, { shareToken: order.shareToken }) };
     });
   },
 

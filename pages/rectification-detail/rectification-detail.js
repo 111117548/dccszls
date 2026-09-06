@@ -1,11 +1,13 @@
 var app = getApp();
 var util = require('../../utils/util.js');
+var feishu = require('../../utils/feishu-rectification.js');
 
 function getPhotoUrl(value) {
   if (!value) return '';
-  if (typeof value === 'string') return value;
+  if (typeof value === 'string') return /\/open-apis\//.test(value) ? '' : value;
   if (typeof value !== 'object') return '';
-  return value.tempFileURL || value.temp_file_url || value.tempUrl || value.download_url || value.preview_url || value.url || value.fileID || value.fileId || value.path || value.localPath || '';
+  var url = value.tempFileURL || value.temp_file_url || value.tempUrl || value.tmp_download_url || value.download_url || value.preview_url || value.url || value.fileID || value.fileId || value.path || value.localPath || '';
+  return /\/open-apis\//.test(url) ? '' : url;
 }
 
 function collectPhotos() {
@@ -120,7 +122,8 @@ Page({
     reviewNote: '', reviewing: false,
     reminderConfig: {}, reminderState: {}, reminderLoading: false,
     reminderConfigured: false, reminderEnabled: false, reminderNeedsRenewal: false,
-    reminderModeName: '', reminderStatusText: '', reminderRecipientText: '', reminderSendTime: '09:00'
+    reminderModeName: '', reminderStatusText: '', reminderRecipientText: '', reminderSendTime: '09:00',
+    feishuRefreshing: false, feishuEvidenceError: '', problemPhotoErrors: {}
   },
 
   onLoad: function (options) {
@@ -130,8 +133,10 @@ Page({
     var fromShare = options.from === 'share';
     this.setData({ orderId: orderId, projectId: projectId, shareToken: shareToken, fromShare: fromShare, isCreatorView: !fromShare });
     wx.showShareMenu({ menus: ['shareAppMessage'] });
-    this.loadOrder();
+    this.loadOrder().catch(function () {});
   },
+
+  onUnload: function () { this._disposed = true; },
 
   onPullDownRefresh: function () {
     var self = this;
@@ -140,6 +145,7 @@ Page({
 
   loadOrder: function () {
     var self = this;
+    this._verifiedSharedOrder = null;
     var local = app.getRectificationOrder(this.data.orderId);
     var projectId = this.data.projectId || (local && local.projectId) || app.getV3State().project.id;
     var shareToken = this.data.shareToken || (local && local.shareToken) || '';
@@ -147,13 +153,16 @@ Page({
 
     if (shareToken) {
       return app.loadOpenRectification(projectId, this.data.orderId, shareToken).then(function (order) {
+        if (self.data.fromShare && order && order.id === self.data.orderId && order.projectId === projectId) {
+          self._verifiedSharedOrder = Object.assign({}, order, { shareToken: shareToken });
+        }
         self._applyOrder(order);
-        return order;
+        return self._refreshFeishuIssue(false, true).catch(function () { return order; });
       }).catch(function (err) {
         if (local && local.shareToken === shareToken) {
           self._applyOrder(local);
           wx.showToast({ title: '当前显示本地记录', icon: 'none' });
-          return local;
+          return self._refreshFeishuIssue(false, true).catch(function () { return local; });
         }
         self.setData({ loading: false, errorMessage: err.message || '整改协作链接无法打开' });
         throw err;
@@ -161,15 +170,17 @@ Page({
     }
     if (local) {
       this._applyOrder(local);
-      return Promise.resolve(local);
+      return this._refreshFeishuIssue(false, true).catch(function () { return local; });
     }
     this.setData({ loading: false, errorMessage: '未找到整改单，请从原分享卡片重新打开。' });
     return Promise.reject(new Error('整改单不存在'));
   },
 
   _applyOrder: function (order) {
-    if (!order) return;
+    if (!order || this._disposed) return;
     var decorated = Object.assign({}, order);
+    decorated._taskEvidencePhotos = order._taskEvidencePhotos || collectPhotos(order.evidencePhotos,
+      order.rectification && order.rectification.evidencePhotos);
     var feishuSnapshot = order.feishuSnapshot || {};
     var snapshotItem = feishuSnapshot.item || {};
     decorated.items = (order.items || []).map(function (item, index) {
@@ -210,6 +221,13 @@ Page({
       order.closureImages,
       feishuSnapshot.closureImages
     );
+    // Fresh evidence is authoritative, including an empty attachment column.
+    // Do not mix expired snapshot URLs or old, removed Feishu images back in.
+    var liveEvidence = order._feishuEvidence;
+    if (liveEvidence) {
+      decorated.beforePhotos = collectPhotos(liveEvidence.sourceImages);
+      decorated.afterPhotos = collectPhotos(decorated._taskEvidencePhotos, liveEvidence.closureImages);
+    }
     decorated.evidencePhotos = decorated.afterPhotos.slice();
     decorated.primaryItem = decorated.items[0] || {};
     var primaryItem = decorated.primaryItem;
@@ -221,10 +239,18 @@ Page({
     decorated.taskPositionText = firstText(order.positionCode, primaryItem.positionCode, order.location, primaryItem.location, feishuSnapshot.positionCode, feishuSnapshot.location, snapshotItem.positionCode, '未填写具体位置');
     decorated.taskEquipmentText = joinUnique([decorated.taskDeviceName, decorated.taskComponentName]) || '未填写设备部件';
     decorated.taskLocationDetail = joinUnique([decorated.taskProjectName, decorated.taskDeviceName, decorated.taskComponentName, decorated.taskPositionText]);
-    decorated.taskDescription = firstText(primaryItem.description, order.description, snapshotItem.description, feishuSnapshot.description);
-    if (decorated.taskDescription === decorated.taskTitle) decorated.taskDescription = '';
+    decorated.taskDescription = liveEvidence ? normalizeText(liveEvidence.description) : firstText(order.qualityIssue, order['存在质量问题'], primaryItem.description, order.description, feishuSnapshot.qualityIssue, feishuSnapshot.description, snapshotItem.description);
+    if (liveEvidence && liveEvidence.location) decorated.taskPositionText = liveEvidence.location;
     decorated.taskRequirement = firstText(primaryItem.suggestion, order.suggestion, order.requirement, snapshotItem.suggestion, feishuSnapshot.requirement);
     decorated.sourcePhotoCount = decorated.beforePhotos.length;
+    decorated.sourceAttachmentCount = Math.max(
+      decorated.sourcePhotoCount,
+      Array.isArray(order.sourceImages) ? order.sourceImages.length : 0,
+      Array.isArray(order.problemPhotos) ? order.problemPhotos.length : 0,
+      Array.isArray(feishuSnapshot.sourceImages) ? feishuSnapshot.sourceImages.length : 0,
+      Array.isArray(feishuSnapshot.problemPhotos) ? feishuSnapshot.problemPhotos.length : 0
+    );
+    if (liveEvidence) decorated.sourceAttachmentCount = (liveEvidence.sourceImages || []).length;
     decorated.sourceImageUrl = decorated.beforePhotos[0] || '';
     decorated.deadlineText = formatDeadline(order.deadline || feishuSnapshot.deadline);
     var reminderConfig = order._reminderConfig || this.data.reminderConfig || {};
@@ -266,6 +292,59 @@ Page({
     this._resolveCloudPhotos(decorated);
   },
 
+  _refreshFeishuIssue: function (forceRefresh, silent) {
+    var self = this;
+    var current = this.data.order || app.getRectificationOrder(this.data.orderId);
+    if (!current || !current.feishuRecordId || this._disposed) return Promise.resolve(current);
+    if (this._taskEvidenceRequest) return this._taskEvidenceRequest;
+    var orderId = this.data.orderId;
+    var projectId = this.data.projectId;
+    var payload = { orderId: orderId, projectId: projectId };
+    if (this.data.fromShare) payload.shareToken = this.data.shareToken;
+    else {
+      payload.recordId = current.feishuRecordId;
+      payload.source = current.feishuSource || null;
+      payload.project = app.getFeishuProjectContext();
+    }
+    this.setData({ feishuRefreshing: true, feishuEvidenceError: '', problemPhotoErrors: {} });
+    var request = feishu.getTaskEvidence(payload).then(function (result) {
+      if (self._disposed || self.data.orderId !== orderId || self.data.projectId !== projectId) return current;
+      if (result.task.recordId !== current.feishuRecordId) throw new Error('飞书任务编号不一致，请重新打开任务');
+      // Refresh this detail only: no full-table sync, status transition or write-back.
+      var updated = Object.assign({}, self.data.order, { _feishuEvidence: result.task });
+      self._applyOrder(updated);
+      self.setData({ feishuRefreshing: false, feishuEvidenceError: result.warning || '' });
+      return updated;
+    }).catch(function (error) {
+      if (self._disposed || self.data.orderId !== orderId || self.data.projectId !== projectId) return current;
+      self.setData({ feishuRefreshing: false, feishuEvidenceError: error.message || '飞书内容读取失败，请重试' });
+      if (!silent) {
+        wx.showModal({ title: '飞书内容刷新失败', content: error.message || '请稍后重试', showCancel: false });
+      }
+      throw error;
+    });
+    this._taskEvidenceRequest = request.then(function (value) {
+      self._taskEvidenceRequest = null; return value;
+    }, function (error) {
+      self._taskEvidenceRequest = null; throw error;
+    });
+    return this._taskEvidenceRequest;
+  },
+
+  refreshFeishuIssue: function () {
+    return this._refreshFeishuIssue(true, false).catch(function () {});
+  },
+
+  onProblemPhotoError: function (event) {
+    var index = Number(event.currentTarget.dataset.index);
+    var photos = (this.data.order && this.data.order.beforePhotos) || [];
+    if (photos[index] !== event.currentTarget.dataset.url) return;
+    var errors = Object.assign({}, this.data.problemPhotoErrors);
+    errors[index] = true;
+    this.setData({ problemPhotoErrors: errors,
+      feishuEvidenceError: '部分图片加载失败，可刷新飞书重试；若持续失败，请检查网络与小程序图片域名配置。' });
+  },
+
   _resolveCloudPhotos: function (order) {
     var self = this;
     var fileList = collectPhotos(order.beforePhotos, order.afterPhotos).filter(function (url) {
@@ -280,7 +359,7 @@ Page({
           if (item.fileID && item.tempFileURL) urlMap[item.fileID] = item.tempFileURL;
         });
         var current = self.data.order;
-        if (!current || current.id !== order.id) return;
+        if (self._disposed || !current || current.id !== order.id) return;
         var nextOrder = Object.assign({}, current);
         nextOrder.beforePhotos = (current.beforePhotos || []).map(function (url) { return urlMap[url] || url; });
         nextOrder.afterPhotos = (current.afterPhotos || []).map(function (url) { return urlMap[url] || url; });
@@ -452,7 +531,7 @@ Page({
     if (!this.data.isCreatorView || !this.data.isReview || this.data.reviewing) return;
     wx.showModal({
       title: '确认复验通过',
-      content: '确认后整改单、关联缺陷和AI质检历史将统一更新为“已闭环”。',
+      content: '确认后整改单、关联缺陷和智能质检历史将统一更新为“已闭环”。',
       confirmText: '确认闭环',
       success: function (res) {
         if (!res.confirm) return;
@@ -520,10 +599,10 @@ Page({
   },
 
   onShareAppMessage: function () {
-    var order = this.data.order || {}; var token = this.data.shareToken || order.shareToken || '';
-    return {
-      title: '整改协作单 ' + (order.id || '') + '｜点击上传整改照片并提交复验',
-      path: '/pages/rectification-detail/rectification-detail?id=' + encodeURIComponent(order.id || this.data.orderId) + '&projectId=' + encodeURIComponent(order.projectId || this.data.projectId) + '&token=' + encodeURIComponent(token) + '&from=share'
-    };
+    var share = require('../../utils/share.js');
+    // A valid recipient may forward the same capability. Creators use the
+    // explicit share-preparation page; a local-only task must never be sent.
+    if (this.data.fromShare && this._verifiedSharedOrder) return share.task(this._verifiedSharedOrder);
+    return share.home();
   }
 });

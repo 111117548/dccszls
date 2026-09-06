@@ -157,7 +157,7 @@ function buildSummaryParagraph(defects, majorCount, moderateCount, minorCount) {
 // ============================================================
 function buildDefectsTable(defects) {
   // Header row
-  var headerTexts = ['序号', '设备/系统', '空间位置', '缺陷名称', '等级', 'AI置信度', '整改状态', '整改建议'];
+  var headerTexts = ['序号', '设备/系统', '空间位置', '缺陷名称', '等级', '智能置信度', '整改状态', '整改建议'];
   var headerWidths = [5, 14, 12, 15, 8, 9, 10, 27];
 
   var headerRow = new TableRow({
@@ -351,7 +351,7 @@ function buildDocument(reportData, defects, majorCount, moderateCount, minorCoun
     alignment: AlignmentType.CENTER,
     spacing: { after: 80 },
     children: [new TextRun({
-      text: reportType === 'daily' ? '低低温电除尘AI安装质量检查日报' : 'ESP安装质量检查',
+      text: reportType === 'daily' ? '低低温电除尘智能安装质量检查日报' : 'ESP安装质量检查',
       bold: true,
       size: 40,
       font: 'Microsoft YaHei'
@@ -496,7 +496,7 @@ exports.main = async function (event, context) {
 
     // 4. Upload to cloud storage
     var timestamp = Date.now();
-    var fileName = (reportType === 'daily' ? '低低温电除尘AI安装质量检查日报_' : 'ESP整改报告_') + (reportData.project || '未知项目') + '_' + timestamp + '.docx';
+    var fileName = (reportType === 'daily' ? '低低温电除尘智能安装质量检查日报_' : 'ESP整改报告_') + (reportData.project || '未知项目') + '_' + timestamp + '.docx';
     // Sanitize filename (remove special chars)
     fileName = fileName.replace(/[\\/:*?"<>|]/g, '_');
 

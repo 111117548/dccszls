@@ -14,12 +14,32 @@
 
     <view class="defect-summary panel">
       <view class="summary-copy">
-        <text>{{order.primaryItem.name || order.title}}</text>
-        <label class="level">{{order.primaryItem.severityName}}</label>
-        <label>{{order.positionCode || order.primaryItem.positionCode}}</label>
+        <text>{{order.taskTitle}}</text>
+        <label class="level">{{order.taskSeverityName}}</label>
+        <label>{{order.taskEquipmentText}}</label>
         <view><text>整改期限</text><label>{{order.deadlineText}}</label></view>
       </view>
-      <image wx:if="{{order.sourceImageUrl && !isReview && !isClosed}}" src="{{order.sourceImageUrl}}" mode="aspectFill" bindtap="previewSource"></image>
+    </view>
+
+    <view class="problem-card panel">
+      <view class="problem-card-head">
+        <view><text>存在的质量问题</text><label>{{order.feishuRecordId ? '内容来自飞书质量检查表' : '内容来自现场检查记录'}}</label></view>
+        <button wx:if="{{order.feishuRecordId}}" loading="{{feishuRefreshing}}" disabled="{{feishuRefreshing}}" bindtap="refreshFeishuIssue">刷新飞书</button>
+      </view>
+      <view class="problem-description">{{order.taskDescription || (feishuRefreshing ? '正在读取质量问题说明…' : (feishuEvidenceError ? '质量问题说明读取失败' : '暂未填写质量问题说明'))}}</view>
+      <view class="problem-position"><text>问题位置</text><label>{{order.taskPositionText}}</label></view>
+      <view class="problem-photo-head"><text>问题图片</text><label>{{feishuRefreshing ? '读取中' : (feishuEvidenceError ? '待确认' : order.sourcePhotoCount + ' 张')}}</label></view>
+      <view class="problem-photo-grid" wx:if="{{order.beforePhotos.length}}">
+        <view class="problem-photo-cell" wx:for="{{order.beforePhotos}}" wx:key="*this">
+          <image src="{{item}}" mode="aspectFill" bindtap="previewPhoto" binderror="onProblemPhotoError" data-index="{{index}}" data-url="{{item}}" data-group="before"></image>
+          <text wx:if="{{problemPhotoErrors[index]}}" class="problem-photo-error">图片加载失败</text>
+        </view>
+      </view>
+      <view class="problem-photo-empty" wx:elif="{{feishuRefreshing}}">正在读取飞书问题图片…</view>
+      <view class="problem-photo-empty" wx:elif="{{order.sourceAttachmentCount}}">已读取 {{order.sourceAttachmentCount}} 个附件，图片链接暂不可用，请刷新重试。</view>
+      <view class="problem-photo-empty" wx:elif="{{feishuEvidenceError}}">暂时无法确认飞书问题图片，请刷新重试。</view>
+      <view class="problem-photo-empty" wx:else>{{order.feishuRecordId ? '飞书“问题”附件列暂未上传图片' : '该任务暂未上传问题图片'}}</view>
+      <view class="problem-evidence-warning" wx:if="{{feishuEvidenceError}}">{{feishuEvidenceError}}</view>
     </view>
 
     <view class="open-mode" wx:if="{{fromShare && !isClosed && !isReview}}">ⓘ　无需绑定项目身份，收到分享即可提交整改</view>

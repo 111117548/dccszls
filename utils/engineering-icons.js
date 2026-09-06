@@ -16,18 +16,18 @@ var ICONS = {
 };
 
 var STAGE_ICONS = {
-  1: ICONS.constructionHelmet,
+  1: ICONS.welding,
   2: ICONS.constructionHelmet,
-  3: ICONS.welding,
-  4: ICONS.ashHopper,
+  3: ICONS.ashHopper,
+  4: ICONS.craneLifting,
   5: ICONS.craneLifting,
-  6: ICONS.flueDuct,
-  7: ICONS.collectingPlate,
-  8: ICONS.dischargeElectrode,
-  9: ICONS.rappingSystem,
-  10: ICONS.transformerRectifier,
-  11: ICONS.craneLifting,
-  12: ICONS.electricField,
+  6: ICONS.electricField,
+  7: ICONS.flueDuct,
+  8: ICONS.espUnit,
+  9: ICONS.engineeringInspection,
+  10: ICONS.rappingSystem,
+  11: ICONS.transformerRectifier,
+  12: ICONS.craneLifting,
   13: ICONS.engineeringInspection
 };
 

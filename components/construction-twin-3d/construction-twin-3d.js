@@ -1,9 +1,5 @@
 var CHAMBERS = ['A1', 'A2', 'B1', 'B2'];
-var STAGE_NAMES = [
-  '支座安装', '基础梁安装', '钢支架安装', '灰斗安装', '壳体安装',
-  '进出口安装', '阳极系统安装', '阴阳极系统安装', '振打系统安装',
-  '高压设备安装', '平台扶梯安装', '电气仪表安装', '调试验收'
-];
+var STAGE_NAMES = require('../../utils/stage-catalog').STAGES.map(function (stage) { return stage.name; });
 var MODEL_PATHS = [
   'assets/models/esp-two-chamber-assembled.glb',
   '/assets/models/esp-two-chamber-assembled.glb'
@@ -103,25 +99,25 @@ function parseGlb(arrayBuffer) {
 }
 function stageForNode(name, inherited) {
   name = String(name || '');
-  if (name.indexOf('STAGE_01_') === 0) return 1;
-  if (name.indexOf('STAGE_02_') === 0) return 2;
-  if (name.indexOf('STAGE_03_') === 0) return 3;
-  if (name.indexOf('STAGE_04_') === 0) return 4;
-  if (name.indexOf('STAGE_05_') === 0) return 5;
-  if (name.indexOf('STAGE_06_') === 0) return 6;
-  if (name.indexOf('STAGE_10_') === 0) return 10;
-  if (name.indexOf('STAGE_11_') === 0) return 11;
-  if (name.indexOf('STAGE_12_') === 0) return 12;
-  if (name.indexOf('::01-钢支架') >= 0) return 3;
-  if (name.indexOf('06-柱脚锚栓接口') >= 0) return 1;
-  if (name.indexOf('02-纵向梁') >= 0 || name.indexOf('03-横向梁') >= 0) return 2;
-  if (name.indexOf('::02-灰斗') >= 0) return 4;
-  if (name.indexOf('::04-壳体') >= 0) return 5;
-  if (name.indexOf('::08-进出口喇叭') >= 0) return 6;
-  if (name.indexOf('::11-高压进线') >= 0) return 10;
-  if (name.indexOf('::12-顶部起吊') >= 0) return 11;
-  if (name.indexOf('::13-保温箱') >= 0) return 12;
-  if (name.indexOf('Hopper_Underside_Steel_Platform') >= 0 || name.indexOf('Central_And_End_Service_Access') >= 0) return 11;
+  // The GLB's anchor numbers are export-time labels, not current UI indexes.
+  if (name.indexOf('STAGE_01_') === 0) return 2;
+  if (name.indexOf('STAGE_02_') === 0 || name.indexOf('STAGE_03_') === 0) return 1;
+  if (name.indexOf('STAGE_04_') === 0) return 3;
+  if (name.indexOf('STAGE_05_') === 0) return 4;
+  if (name.indexOf('STAGE_06_') === 0) return 7;
+  if (name.indexOf('STAGE_10_') === 0) return 11;
+  if (name.indexOf('STAGE_11_') === 0) return 5;
+  if (name.indexOf('STAGE_12_') === 0) return 8;
+  if (name.indexOf('::01-钢支架') >= 0) return 1;
+  if (name.indexOf('06-柱脚锚栓接口') >= 0) return 2;
+  if (name.indexOf('02-纵向梁') >= 0 || name.indexOf('03-横向梁') >= 0) return 1;
+  if (name.indexOf('::02-灰斗') >= 0) return 3;
+  if (name.indexOf('::04-壳体') >= 0) return 4;
+  if (name.indexOf('::08-进出口喇叭') >= 0) return 7;
+  if (name.indexOf('::11-高压进线') >= 0) return 11;
+  if (name.indexOf('::12-顶部起吊') >= 0) return 12;
+  if (name.indexOf('::13-保温箱') >= 0) return 8;
+  if (name.indexOf('Hopper_Underside_Steel_Platform') >= 0 || name.indexOf('Central_And_End_Service_Access') >= 0) return 5;
   return inherited;
 }
 function materialColor(doc, materialIndex) {
@@ -140,7 +136,10 @@ Component({
     markers: { type: Array, value: [] },
     compact: { type: Boolean, value: false },
     minimal: { type: Boolean, value: false },
-    light: { type: Boolean, value: false, observer: 'onLightChanged' }
+    light: { type: Boolean, value: false, observer: 'onLightChanged' },
+    animateAssembly: { type: Boolean, value: false },
+    playToken: { type: Number, value: 0, observer: 'onPlayTokenChanged' },
+    viewportHeight: { type: Number, value: 0, observer: 'onViewportChanged' }
   },
   data: {
     ready: false,
@@ -149,20 +148,52 @@ Component({
     modelError: '',
     selectedPart: '',
     stageLabel: '支座安装',
-    modelCaption: '双室电除尘器 · 工程轻量模型'
+    modelCaption: '双室电除尘器 · 工程轻量模型',
+    assembling: false,
+    assemblyStageLabel: '',
+    assemblyStepText: '',
+    assemblyProgress: 0
   },
   lifetimes: {
     ready: function () { this.initCanvas(); },
     detached: function () { this.dispose(); }
   },
+  pageLifetimes: {
+    hide: function () { this.stopAssemblyAnimation(false); }
+  },
   methods: {
     onStageChanged: function (value) {
       var stage = clamp(Number(value) || 1, 1, 13);
+      if (this.assembling) this.stopAssemblyAnimation(false);
       this.setData({ stageLabel: STAGE_NAMES[stage - 1] });
       if (this.modelDoc && this.gl) this.rebuildStage(stage);
     },
+    onPlayTokenChanged: function (value) {
+      if (!Number(value) || !this.data.animateAssembly) return;
+      this.pendingAssemblyToken = Number(value);
+      if (this.modelDoc && this.gl) this.startAssemblyAnimation(clamp(Number(this.data.stageIndex) || 1, 1, 13));
+    },
     onLightChanged: function () {
       if (this.gl) this.render();
+    },
+    onViewportChanged: function () {
+      if (!this.canvas || !this.gl) return;
+      var self = this;
+      if (this.resizeTimer) clearTimeout(this.resizeTimer);
+      this.resizeTimer = setTimeout(function () { self.resizeCanvas(); }, 0);
+    },
+    resizeCanvas: function () {
+      var self = this;
+      if (!this.canvas || !this.gl) return;
+      this.createSelectorQuery().select('#constructionTwinCanvas').fields({ size: true }).exec(function (res) {
+        if (!res[0] || !res[0].width || !res[0].height || !self.canvas) return;
+        var dpr = (wx.getWindowInfo ? wx.getWindowInfo().pixelRatio : 1) || 1;
+        self.cssWidth = res[0].width;
+        self.cssHeight = res[0].height;
+        self.canvas.width = Math.max(1, Math.round(res[0].width * dpr));
+        self.canvas.height = Math.max(1, Math.round(res[0].height * dpr));
+        self.render();
+      });
     },
     initCanvas: function () {
       var self = this;
@@ -188,7 +219,7 @@ Component({
     },
     initProgram: function () {
       var gl = this.gl;
-      var vs = 'attribute vec3 aPosition;attribute vec3 aNormal;attribute vec4 aColor;uniform mat4 uMvp;varying vec4 vColor;void main(){vec3 n=normalize(aNormal);vec3 l=normalize(vec3(.45,.82,.62));float diffuse=max(dot(n,l),0.0);float light=.42+diffuse*.72;vec3 color=min(aColor.rgb*light+vec3(.015,.035,.055),vec3(1.0));vColor=vec4(color,aColor.a);gl_Position=uMvp*vec4(aPosition,1.0);}';
+      var vs = 'attribute vec3 aPosition;attribute vec3 aNormal;attribute vec4 aColor;attribute float aBuildWeight;uniform mat4 uMvp;uniform float uDropOffset;uniform float uBuildAlpha;varying vec4 vColor;void main(){vec3 n=normalize(aNormal);vec3 l=normalize(vec3(.45,.82,.62));float diffuse=max(dot(n,l),0.0);float light=.42+diffuse*.72;vec3 color=min(aColor.rgb*light+vec3(.015,.035,.055),vec3(1.0));float alpha=aColor.a*mix(1.0,uBuildAlpha,aBuildWeight);vColor=vec4(color,alpha);vec3 position=aPosition+vec3(0.0,uDropOffset*aBuildWeight,0.0);gl_Position=uMvp*vec4(position,1.0);}';
       var fs = 'precision mediump float;varying vec4 vColor;void main(){gl_FragColor=vColor;}';
       var program = gl.createProgram();
       gl.attachShader(program, this.shader(gl.VERTEX_SHADER, vs));
@@ -200,7 +231,10 @@ Component({
         p: gl.getAttribLocation(program, 'aPosition'),
         n: gl.getAttribLocation(program, 'aNormal'),
         c: gl.getAttribLocation(program, 'aColor'),
-        m: gl.getUniformLocation(program, 'uMvp')
+        w: gl.getAttribLocation(program, 'aBuildWeight'),
+        m: gl.getUniformLocation(program, 'uMvp'),
+        d: gl.getUniformLocation(program, 'uDropOffset'),
+        a: gl.getUniformLocation(program, 'uBuildAlpha')
       };
     },
     loadModel: function (pathIndex) {
@@ -212,7 +246,8 @@ Component({
           try {
             var parsed = parseGlb(res.data);
             self.modelDoc = parsed.doc; self.modelBin = parsed.bin;
-            self.rebuildStage(clamp(Number(self.data.stageIndex) || 1, 1, 13));
+            if (self.data.animateAssembly) self.startAssemblyAnimation(clamp(Number(self.data.stageIndex) || 1, 1, 13));
+            else self.rebuildStage(clamp(Number(self.data.stageIndex) || 1, 1, 13));
           } catch (err) { self.failModel(err.message || 'GLB 模型解析失败'); }
         },
         fail: function () { self.loadModel(pathIndex + 1); }
@@ -225,7 +260,7 @@ Component({
         var node = doc.nodes[index] || {};
         var requiredStage = stageForNode(node.name, inheritedStage);
         var world = multiply(parent, nodeMatrix(node));
-        if (node.mesh != null && stage >= requiredStage) list.push({ mesh: node.mesh, matrix: world });
+        if (node.mesh != null && stage >= requiredStage) list.push({ mesh: node.mesh, matrix: world, stage: requiredStage });
         (node.children || []).forEach(function (child) { walk(child, world, requiredStage); });
       }
       (scene.nodes || []).forEach(function (index) { walk(index, identity(), 1); });
@@ -238,12 +273,13 @@ Component({
       var stride = view.byteStride || 12;
       return { accessor: accessor, view: new DataView(this.modelBin), start: start, stride: stride };
     },
-    rebuildStage: function (stage) {
+    rebuildStage: function (stage, options) {
       if (!this.modelDoc || !this.gl) return;
       if (this.rebuilding) { this.pendingStage = stage; return; }
+      options = options || {};
       this.rebuilding = true;
       this.pendingStage = null;
-      this.setData({ loading: true, modelError: '' });
+      if (!options.animationStep) this.setData({ loading: true, modelError: '' });
       try {
         var doc = this.modelDoc, instances = this.collectInstances(stage), total = 0, i, j;
         for (i = 0; i < instances.length; i++) {
@@ -251,7 +287,7 @@ Component({
           for (j = 0; j < mesh.primitives.length; j++) total += doc.accessors[mesh.primitives[j].attributes.POSITION].count;
         }
         if (!total) throw new Error('当前阶段没有可显示的模型构件');
-        var positions = new Float32Array(total * 3), normals = new Float32Array(total * 3), colors = new Float32Array(total * 4);
+        var positions = new Float32Array(total * 3), normals = new Float32Array(total * 3), colors = new Float32Array(total * 4), buildWeights = new Float32Array(total);
         var vertexOffset = 0, min = [Infinity, Infinity, Infinity], max = [-Infinity, -Infinity, -Infinity];
         for (i = 0; i < instances.length; i++) {
           mesh = doc.meshes[instances[i].mesh];
@@ -259,6 +295,9 @@ Component({
             var primitive = mesh.primitives[j], pr = this.accessorReader(primitive.attributes.POSITION);
             var nr = primitive.attributes.NORMAL == null ? null : this.accessorReader(primitive.attributes.NORMAL);
             var color = materialColor(doc, primitive.material), count = pr.accessor.count;
+            if (options.highlightStage && Number(instances[i].stage) === Number(options.highlightStage)) {
+              color = this.data.light ? [0.08, 0.47, 0.96, 1] : [0.12, 0.62, 1, 1];
+            }
             for (var v = 0; v < count; v++) {
               var po = pr.start + v * pr.stride;
               var px = pr.view.getFloat32(po, true), py = pr.view.getFloat32(po + 4, true), pz = pr.view.getFloat32(po + 8, true);
@@ -272,6 +311,7 @@ Component({
               } else { normals[pIndex + 1] = 1; }
               var cIndex = (vertexOffset + v) * 4;
               colors[cIndex] = color[0]; colors[cIndex + 1] = color[1]; colors[cIndex + 2] = color[2]; colors[cIndex + 3] = color[3];
+              buildWeights[vertexOffset + v] = options.dropNewStage && Number(instances[i].stage) === Number(options.highlightStage) ? 1 : 0;
             }
             vertexOffset += count;
           }
@@ -279,7 +319,9 @@ Component({
         this.sceneCenter = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2];
         var dx = max[0] - min[0], dy = max[1] - min[1], dz = max[2] - min[2];
         this.sceneRadius = Math.max(8, Math.hypot(dx, dy, dz) / 2);
-        this.uploadMesh(positions, normals, colors, total);
+        this.dropOffset = options.dropNewStage ? this.sceneRadius * 0.95 : 0;
+        this.buildAlpha = options.dropNewStage ? 0.18 : 1;
+        this.uploadMesh(positions, normals, colors, buildWeights, total);
         this.currentBuiltStage = stage;
         this.setData({ ready: true, loading: false, fallback: false, stageLabel: STAGE_NAMES[stage - 1] });
         this.render();
@@ -289,13 +331,76 @@ Component({
         var nextStage = this.pendingStage; this.pendingStage = null; this.rebuildStage(nextStage);
       }
     },
-    uploadMesh: function (positions, normals, colors, count) {
+    assemblySequence: function (targetStage) {
+      var target = clamp(Number(targetStage) || 1, 1, 13);
+      var sequence = [];
+      this.collectInstances(target).forEach(function (item) {
+        if (sequence.indexOf(item.stage) < 0) sequence.push(item.stage);
+      });
+      sequence.sort(function (a, b) { return a - b; });
+      return sequence;
+    },
+    startAssemblyAnimation: function (targetStage) {
+      if (!this.modelDoc || !this.gl || !this.data.animateAssembly) return;
+      this.stopAssemblyAnimation(false);
+      var self = this;
+      var target = clamp(Number(targetStage) || 1, 1, 13);
+      var sequence = this.assemblySequence(target);
+      if (!sequence.length) { this.rebuildStage(target); return; }
+      var cursor = 0;
+      this.assemblyTargetStage = target;
+      this.assembling = true;
+      this.yaw = -0.92;
+      this.pitch = 0.28;
+      this.zoomFactor = 1.06;
+      this.setData({ assembling: true, selectedPart: '', assemblyProgress: 0 });
+      function playStep() {
+        if (!self.assembling || cursor >= sequence.length) return;
+        var stage = sequence[cursor];
+        self.yaw += 0.055;
+        self.rebuildStage(stage, { animationStep: true, highlightStage: stage, dropNewStage: true });
+        self.playDropAnimation(540);
+        self.setData({
+          assemblyStageLabel: STAGE_NAMES[stage - 1],
+          assemblyStepText: '第 ' + (cursor + 1) + ' / ' + sequence.length + ' 步',
+          assemblyProgress: Math.round((cursor + 1) / sequence.length * 100)
+        });
+        cursor += 1;
+        if (cursor < sequence.length) {
+          self.assemblyTimer = setTimeout(playStep, 720);
+        } else {
+          self.assemblyTimer = setTimeout(function () {
+            if (!self.assembling) return;
+            self.assembling = false;
+            self.rebuildStage(target, { animationStep: true, highlightStage: target });
+            self.setData({ assembling: false, stageLabel: STAGE_NAMES[target - 1] });
+          }, 850);
+        }
+      }
+      playStep();
+    },
+    stopAssemblyAnimation: function (finishAtTarget) {
+      if (this.assemblyTimer) clearTimeout(this.assemblyTimer);
+      this.assemblyTimer = null;
+      this.cancelFrame();
+      this.dropOffset = 0;
+      this.buildAlpha = 1;
+      var wasAssembling = !!this.assembling;
+      this.assembling = false;
+      if (wasAssembling) this.setData({ assembling: false });
+      if (finishAtTarget && this.modelDoc && this.gl) {
+        var target = clamp(Number(this.assemblyTargetStage || this.data.stageIndex) || 1, 1, 13);
+        this.rebuildStage(target, { animationStep: true, highlightStage: target });
+        this.setData({ stageLabel: STAGE_NAMES[target - 1] });
+      }
+    },
+    uploadMesh: function (positions, normals, colors, buildWeights, count) {
       var gl = this.gl;
       if (this.buffers) {
-        gl.deleteBuffer(this.buffers.p); gl.deleteBuffer(this.buffers.n); gl.deleteBuffer(this.buffers.c);
+        gl.deleteBuffer(this.buffers.p); gl.deleteBuffer(this.buffers.n); gl.deleteBuffer(this.buffers.c); gl.deleteBuffer(this.buffers.w);
       }
       function buffer(data) { var b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW); return b; }
-      this.buffers = { p: buffer(positions), n: buffer(normals), c: buffer(colors) };
+      this.buffers = { p: buffer(positions), n: buffer(normals), c: buffer(colors), w: buffer(buildWeights || new Float32Array(count)) };
       this.vertexCount = count;
     },
     render: function () {
@@ -307,19 +412,58 @@ Component({
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       gl.enable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.useProgram(this.program);
       var center = this.sceneCenter, aspect = this.canvas.width / this.canvas.height;
-      var baseRadius = this.sceneRadius * (aspect < 0.9 ? 2.85 : 2.45), radius = baseRadius * this.zoomFactor;
+      var framing = aspect < 0.9 ? 3.1 : aspect < 1.15 ? 2.9 : aspect < 1.35 ? 2.65 : 2.45;
+      var baseRadius = this.sceneRadius * framing, radius = baseRadius * this.zoomFactor;
       var cp = Math.cos(this.pitch);
       var eye = [center[0] + radius * Math.sin(this.yaw) * cp, center[1] + radius * Math.sin(this.pitch), center[2] + radius * Math.cos(this.yaw) * cp];
       var mvp = multiply(perspective(Math.PI / 5.2, aspect, 0.1, Math.max(1000, radius * 8)), lookAt(eye, center, [0, 1, 0]));
       gl.uniformMatrix4fv(this.loc.m, false, new Float32Array(mvp));
+      gl.uniform1f(this.loc.d, Number(this.dropOffset || 0));
+      gl.uniform1f(this.loc.a, this.buildAlpha == null ? 1 : Number(this.buildAlpha));
       var self = this;
-      [['p', this.loc.p, 3], ['n', this.loc.n, 3], ['c', this.loc.c, 4]].forEach(function (item) {
+      [['p', this.loc.p, 3], ['n', this.loc.n, 3], ['c', this.loc.c, 4], ['w', this.loc.w, 1]].forEach(function (item) {
         gl.bindBuffer(gl.ARRAY_BUFFER, self.buffers[item[0]]); gl.enableVertexAttribArray(item[1]); gl.vertexAttribPointer(item[1], item[2], gl.FLOAT, false, 0, 0);
       });
       gl.drawArrays(gl.TRIANGLES, 0, this.vertexCount);
     },
+    requestFrame: function (callback) {
+      if (this.canvas && this.canvas.requestAnimationFrame) return this.canvas.requestAnimationFrame(callback);
+      return setTimeout(function () { callback(Date.now()); }, 16);
+    },
+    cancelFrame: function () {
+      if (this.dropFrame == null) return;
+      if (this.canvas && this.canvas.cancelAnimationFrame) this.canvas.cancelAnimationFrame(this.dropFrame);
+      else clearTimeout(this.dropFrame);
+      this.dropFrame = null;
+    },
+    playDropAnimation: function (duration) {
+      var self = this;
+      this.cancelFrame();
+      var startOffset = Number(this.dropOffset || 0);
+      if (!startOffset) { this.buildAlpha = 1; this.render(); return; }
+      var startedAt = 0;
+      function frame(timestamp) {
+        if (!self.assembling || !self.gl) return;
+        if (!startedAt) startedAt = Number(timestamp || Date.now());
+        var elapsed = Number(timestamp || Date.now()) - startedAt;
+        var ratio = clamp(elapsed / Math.max(1, Number(duration) || 520), 0, 1);
+        var eased = 1 - Math.pow(1 - ratio, 3);
+        self.dropOffset = startOffset * (1 - eased);
+        self.buildAlpha = 0.18 + 0.82 * eased;
+        self.render();
+        if (ratio < 1) self.dropFrame = self.requestFrame(frame);
+        else {
+          self.dropFrame = null;
+          self.dropOffset = 0;
+          self.buildAlpha = 1;
+          self.render();
+        }
+      }
+      this.dropFrame = this.requestFrame(frame);
+    },
     touchPoint: function (touch) { return { x: touch.x == null ? touch.clientX : touch.x, y: touch.y == null ? touch.clientY : touch.y }; },
     touchStart: function (e) {
+      if (this.assembling) this.stopAssemblyAnimation(true);
       var touches = e.touches || []; if (!touches.length) return;
       var p = this.touchPoint(touches[0]); this.touch = { x: p.x, y: p.y, moved: false, startX: p.x };
       if (touches.length > 1) { var p2 = this.touchPoint(touches[1]); this.touch.distance = Math.hypot(p2.x - p.x, p2.y - p.y); }
@@ -352,7 +496,7 @@ Component({
       var marker = (this.data.markers || [])[Number(e.currentTarget.dataset.index)];
       if (marker) this.triggerEvent('markertap', { id: marker.id, defect: marker });
     },
-    resetView: function () { this.yaw = -0.68; this.pitch = 0.32; this.zoomFactor = 1; this.setData({ selectedPart: '' }); this.render(); },
+    resetView: function () { if (this.assembling) this.stopAssemblyAnimation(true); this.yaw = -0.68; this.pitch = 0.32; this.zoomFactor = 1; this.setData({ selectedPart: '' }); this.render(); },
     failModel: function (message) {
       console.error('[construction-twin-3d]', message);
       this.setData({ loading: false, fallback: true, ready: false, modelError: message });
@@ -363,8 +507,11 @@ Component({
       else this.loadModel(0);
     },
     dispose: function () {
+      this.stopAssemblyAnimation(false);
+      if (this.resizeTimer) clearTimeout(this.resizeTimer);
+      this.resizeTimer = null;
       if (this.gl && this.buffers) {
-        this.gl.deleteBuffer(this.buffers.p); this.gl.deleteBuffer(this.buffers.n); this.gl.deleteBuffer(this.buffers.c);
+        this.gl.deleteBuffer(this.buffers.p); this.gl.deleteBuffer(this.buffers.n); this.gl.deleteBuffer(this.buffers.c); this.gl.deleteBuffer(this.buffers.w);
       }
       this.buffers = null; this.modelDoc = null; this.modelBin = null; this.gl = null; this.canvas = null;
     }

@@ -1,6 +1,8 @@
 var app = getApp();
 var v3Data = require('../../utils/v3-data.js');
 Page({
+  onShareAppMessage: function () { return require('../../utils/share.js').home(); },
+
   data: { nodeId: 'esp', node: {}, status: 'normal', defects: [], records: [], childRows: [], photos: [] },
   onLoad: function (options) { this.setData({ nodeId: options.id || 'esp' }); },
   onShow: function () { this.loadDetail(); },

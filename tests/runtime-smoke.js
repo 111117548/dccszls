@@ -20,27 +20,27 @@ var device = foundation.upsertDevice(state, {
   projectId: project.id,
   name: '#1机组电除尘器',
   code: 'TEST-ESP-01',
-  stageIndex: 3
+  stageIndex: 1
 });
 assert.ok(device.id);
 foundation.switchProject(state, project.id);
 foundation.switchDevice(state, device.id);
-foundation.setActualStage(state, 6, '测试工程师', '进出口喇叭安装完成');
+foundation.setActualStage(state, 7, '测试工程师', '进出口喇叭安装完成');
 var context = foundation.getContext(state);
-assert.strictEqual(context.stage.index, 6);
-assert.strictEqual(context.deviceState.progressLogs[0].stageIndex, 6);
+assert.strictEqual(context.stage.index, 7);
+assert.strictEqual(context.deviceState.progressLogs[0].stageIndex, 7);
 
-var steelProgress = foundation.getStageProgressDetail(state, 3);
+var steelProgress = foundation.getStageProgressDetail(state, 1);
 assert.strictEqual(steelProgress.stage.shortName, '钢支架');
-assert.strictEqual(steelProgress.metric.plannedLoads, 50);
-foundation.updateStageProgress(state, 4, {
+assert.strictEqual(steelProgress.metric.plannedLoads, 58);
+foundation.updateStageProgress(state, 3, {
   productionQuantity: 0,
   shippedQuantity: 0,
   arrivedQuantity: 0,
   installedQuantity: 0
 }, { id: 'test-user', name: '测试工程师' });
-foundation.setActualStage(state, 3, { id: 'test-user', name: '测试工程师' }, '测试钢支架预警');
-var updatedProgress = foundation.updateStageProgress(state, 3, {
+foundation.setActualStage(state, 1, { id: 'test-user', name: '测试工程师' }, '测试钢支架预警');
+var updatedProgress = foundation.updateStageProgress(state, 1, {
   plannedQuantity: 960,
   plannedLoads: 50,
   productionQuantity: 800,
@@ -54,7 +54,7 @@ var updatedProgress = foundation.updateStageProgress(state, 3, {
 }, { id: 'test-user', name: '测试工程师' });
 assert.strictEqual(updatedProgress.installedProgress, 80);
 var hopperAlert = updatedProgress.allActiveAlerts.filter(function (item) {
-  return item.type === 'ratio' && item.sourceIndex === 3 && item.targetIndex === 4;
+  return item.type === 'ratio' && item.sourceIndex === 1 && item.targetIndex === 3;
 })[0];
 assert.ok(hopperAlert);
 assert.strictEqual(hopperAlert.level, 'orange');

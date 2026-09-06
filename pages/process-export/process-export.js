@@ -2,6 +2,8 @@ var app = getApp();
 var formData = require('../../utils/process-forms.js');
 
 Page({
+  onShareAppMessage: function () { return require('../../utils/share.js').home(); },
+
   data: {
     entries: [], project: {}, device: {}, exporting: false,
     fileID: '', fileName: '', tempFilePath: '', fileType: 'xlsx',

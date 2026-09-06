@@ -2,6 +2,8 @@ var app = getApp();
 var feishuAuth = require('../../utils/feishu-auth.js');
 
 Page({
+  onShareAppMessage: function () { return require('../../utils/share.js').home(); },
+
   data: {
     loading: true,
     binding: false,
