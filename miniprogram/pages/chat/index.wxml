@@ -1,0 +1,91 @@
+<view class="chat-page safe-bottom">
+  <view class="ai-banner">
+    <text>AI 群聊 · {{modelModeLabel}} · {{worldModeLabel}} · {{storageModeLabel}}</text>
+    <view class="world-link" bindtap="openWorld">世界状态 ›</view>
+  </view>
+
+  <view class="topic-strip">
+    <view class="topic-copy">
+      <text class="mode-pill">{{modeLabel}} · {{modeStatus}}</text>
+      <text class="memory-link" bindtap="openMemory">记忆 {{memoryCount}}</text>
+      <text class="topic-kicker">当前话题</text>
+      <text class="topic-title">{{topicTitle}}</text>
+    </view>
+  </view>
+
+  <scroll-view class="message-list" scroll-y="true" scroll-with-animation="true" scroll-into-view="{{scrollTarget}}">
+    <view class="message-padding">
+      <block wx:for="{{messages}}" wx:key="id">
+        <view id="msg-{{index}}" wx:if="{{item.senderType === 'system'}}" class="system-message">{{item.text}}</view>
+
+        <view wx:elif="{{item.senderType === 'user'}}" id="msg-{{index}}" class="message-row user-row">
+          <view class="user-message-content">
+            <view wx:if="{{item.imageUrl}}" class="image-card">
+              <image
+                class="message-image"
+                src="{{item.imageUrl}}"
+                mode="widthFix"
+                data-url="{{item.imageUrl}}"
+                bindtap="previewMessageImage"
+              />
+              <view class="image-source-label">用户上传图片</view>
+            </view>
+            <view wx:if="{{item.hasVisibleText}}" class="bubble user-bubble">{{item.text}}</view>
+          </view>
+          <view class="avatar {{item.avatarClass}}">{{item.avatarText}}</view>
+        </view>
+
+        <view wx:else id="msg-{{index}}" class="message-row ai-row">
+          <view class="avatar {{item.avatarClass}}">{{item.avatarText}}</view>
+          <view class="message-content">
+            <view class="speaker-line">
+              <text>{{item.speakerName}}</text>
+              <text class="ai-tag">AI</text>
+            </view>
+            <view class="bubble ai-bubble">{{item.text}}</view>
+          </view>
+        </view>
+      </block>
+
+      <view wx:if="{{typing}}" class="typing-row">
+        <view class="typing-name">{{typingName}} 正在输入</view>
+        <view class="typing-dots"><text></text><text></text><text></text></view>
+      </view>
+      <view class="scroll-spacer"></view>
+    </view>
+  </scroll-view>
+
+  <view class="composer-area">
+    <view wx:if="{{imageBusy}}" class="image-progress">
+      <view class="progress-spinner"></view>
+      <text>{{modelModeLabel}}</text>
+    </view>
+    <view class="composer">
+      <view class="composer-input-shell">
+        <input
+          class="composer-input"
+          value="{{inputValue}}"
+          placeholder="{{imageBusy ? '图片处理中…' : sessionReady ? '说点什么…' : '正在恢复群聊…'}}"
+          confirm-type="send"
+          bindinput="onInput"
+          bindconfirm="submitMessage"
+          disabled="{{!sessionReady || imageBusy}}"
+        />
+      </view>
+      <button
+        class="attachment-button"
+        aria-label="添加图片"
+        bindtap="chooseAndSendImage"
+        disabled="{{!sessionReady || imageBusy}}"
+      >
+        <text wx:if="{{!imageBusy}}">＋</text>
+        <view wx:else class="button-spinner"></view>
+      </button>
+      <button
+        wx:if="{{inputValue && sessionReady && !imageBusy}}"
+        class="send-button send-active"
+        bindtap="submitMessage"
+      >发送</button>
+    </view>
+  </view>
+</view>

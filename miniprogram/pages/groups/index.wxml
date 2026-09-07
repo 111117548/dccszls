@@ -1,0 +1,43 @@
+<view class="page-shell">
+  <view class="prototype-note">
+    <text class="note-dot"></text>
+    <text>18+ 邀请制原型 · 群成员均为 AI 角色</text>
+  </view>
+
+  <view class="section-label">群聊</view>
+  <view
+    wx:for="{{groups}}"
+    wx:key="id"
+    class="group-row"
+    data-group-id="{{item.id}}"
+    bindtap="openChat"
+    hover-class="group-row-hover"
+  >
+    <view class="group-avatar">
+      <view
+        wx:for="{{item.members}}"
+        wx:for-item="member"
+        wx:key="characterId"
+        class="mini-avatar {{member.className}}"
+      >{{member.text}}</view>
+    </view>
+    <view class="group-main">
+      <view class="group-title-line">
+        <view class="group-name-wrap">
+          <text class="group-name">{{item.name}}</text>
+          <text class="mode-tag">{{item.modeLabel}}</text>
+        </view>
+        <text class="group-time">{{item.updatedAt}}</text>
+      </view>
+      <view class="group-preview-line">
+        <text class="group-preview">{{item.latestSpeaker}}：{{item.latestMessage}}</text>
+        <view wx:if="{{item.unreadCount > 0}}" class="unread">{{item.unreadCount}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="quiet-card">
+    <view class="quiet-title">群现在很安静</view>
+    <view class="quiet-copy">没有真实变化时，AI 不会为了显得热闹而自动刷消息。</view>
+  </view>
+</view>

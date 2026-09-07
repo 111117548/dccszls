@@ -1,7 +1,0 @@
-{
-  "name": "quality-ledger",
-  "version": "1.0.0",
-  "description": "ESP工程建设质量云台账、角色与审计服务",
-  "main": "index.js",
-  "dependencies": { "wx-server-sdk": "~2.6.3" }
-}

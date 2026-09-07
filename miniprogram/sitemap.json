@@ -1,0 +1,4 @@
+{
+  "desc": "Wchat 阶段 1 原型",
+  "rules": [{ "action": "disallow", "page": "*" }]
+}

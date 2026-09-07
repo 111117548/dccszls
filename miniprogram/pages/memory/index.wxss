@@ -1,0 +1,9 @@
+.memory-page { min-height: 100vh; padding: 24rpx; background: #f3f4f6; box-sizing: border-box; }
+.intro-card, .memory-card, .empty-card { margin-bottom: 20rpx; padding: 28rpx; border-radius: 18rpx; background: #fff; }
+.intro-title { font-size: 31rpx; font-weight: 700; }
+.intro-copy { margin-top: 12rpx; color: #737983; font-size: 24rpx; line-height: 1.65; }
+.empty-card { color: #8b9098; text-align: center; }
+.memory-meta { display: flex; align-items: center; gap: 12rpx; color: #8b9098; font-size: 21rpx; }
+.kind-tag { padding: 3rpx 10rpx; border-radius: 7rpx; color: #4b704f; background: #edf5ee; }
+.memory-content { margin-top: 16rpx; font-size: 27rpx; line-height: 1.6; }
+.clear-button { margin-top: 30rpx; color: #c53f3f; background: #fff; font-size: 25rpx; }

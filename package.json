@@ -1,0 +1,9 @@
+{
+  "name": "wchat-v4-5-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --import ./tests/register-ts.mjs --test tests/*.test.ts"
+  }
+}

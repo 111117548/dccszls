@@ -1,9 +1,0 @@
-{
-  "name": "rectification-reminder",
-  "version": "1.0.0",
-  "description": "ESP整改任务微信订阅消息定时提醒",
-  "main": "index.js",
-  "dependencies": {
-    "wx-server-sdk": "~2.6.3"
-  }
-}

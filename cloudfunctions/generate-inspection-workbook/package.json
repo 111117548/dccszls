@@ -1,9 +1,0 @@
-{
-  "name": "generate-inspection-workbook",
-  "version": "1.0.0",
-  "main": "index.js",
-  "dependencies": {
-    "jszip": "^3.10.1",
-    "wx-server-sdk": "~2.6.3"
-  }
-}

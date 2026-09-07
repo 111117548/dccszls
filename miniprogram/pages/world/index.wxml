@@ -1,0 +1,80 @@
+<view class="world-page">
+  <view class="simulation-alert {{isSimulated ? '' : 'live-alert'}}">
+    <view class="simulation-title">{{isSimulated ? '模拟数据' : '真实数据已同步'}}</view>
+    <view>{{isSimulated ? '以下内容只用于验证界面，不代表你的真实位置或天气。' : '数据来自本次前台定位与天气服务，不进行后台连续追踪。'}}</view>
+    <view class="sync-status">{{syncStatus}}</view>
+  </view>
+
+  <view class="status-card">
+    <view class="card-title-line">
+      <text class="card-title">位置</text>
+      <text class="accuracy">精度约 {{location.accuracy}} 米</text>
+    </view>
+    <view class="hero-value">{{location.landmark}}</view>
+    <view class="address">{{location.address}}</view>
+    <view class="grid">
+      <view class="field"><text>国家</text><text class="field-value">{{location.country}}</text></view>
+      <view class="field"><text>省市</text><text class="field-value">{{location.province}}</text></view>
+      <view class="field"><text>区县</text><text class="field-value">{{location.district}}</text></view>
+      <view class="field"><text>街道</text><text class="field-value">{{location.street}}</text></view>
+    </view>
+    <view class="coordinate">{{location.latitude}}, {{location.longitude}}</view>
+  </view>
+
+  <view class="status-card">
+    <view class="card-title-line">
+      <text class="card-title">天气</text>
+      <text class="accuracy">{{weather.warning || (isSimulated ? '无模拟预警' : '无生效预警')}}</text>
+    </view>
+    <view class="weather-hero">
+      <text class="temperature">{{weather.temperature}}°</text>
+      <view><view class="condition">{{weather.condition}}</view><view class="feels">体感 {{weather.feelsLike}}°</view></view>
+    </view>
+    <view class="grid weather-grid">
+      <view class="field"><text>湿度</text><text class="field-value">{{weather.humidity}}%</text></view>
+      <view class="field"><text>风力</text><text class="field-value">{{weather.wind}}</text></view>
+      <view class="field"><text>降水</text><text class="field-value">{{weather.precipitation}} mm</text></view>
+      <view class="field"><text>状态</text><text class="field-value">{{isSimulated ? '模拟' : '实时'}}</text></view>
+    </view>
+  </view>
+
+  <view class="status-card">
+    <view class="card-title-line">
+      <text class="card-title">附近资讯</text>
+      <text class="accuracy">近 7 日 · 最多 5 条</text>
+    </view>
+    <view class="news-status">{{newsStatus}}</view>
+    <view wx:if="{{localNews.length}}">
+      <view
+        wx:for="{{localNews}}"
+        wx:key="id"
+        class="news-item"
+        data-url="{{item.url}}"
+        bindtap="copyNewsLink"
+      >
+        <view class="news-title">{{item.title}}</view>
+        <view class="news-summary">{{item.summary}}</view>
+        <view class="news-meta">{{item.sourceName}} · {{item.publishedLabel}} · 点击复制原文链接</view>
+      </view>
+    </view>
+    <view wx:else class="news-empty">没有可靠结果时保持空白，不由 AI 补写新闻。</view>
+    <view class="news-attribution">仅使用城市、区县进行检索；内容版权及事实更新以原发布网站为准。</view>
+  </view>
+
+  <view class="status-card meta-card">
+    <view class="card-title">数据说明</view>
+    <view class="meta-row"><text>来源</text><text class="meta-value">{{provider}}</text></view>
+    <view class="meta-row"><text>更新时间</text><text class="meta-value">{{updatedAt}}</text></view>
+    <view class="meta-row"><text>位置有效至</text><text class="meta-value">{{locationExpiresAt}}</text></view>
+    <view class="meta-row"><text>天气有效至</text><text class="meta-value">{{weatherExpiresAt}}</text></view>
+    <view class="meta-row"><text>本地资讯来源</text><text class="meta-value">{{newsProvider}}</text></view>
+    <view class="meta-row"><text>资讯更新时间</text><text class="meta-value">{{newsUpdatedAt}}</text></view>
+    <view class="meta-row"><text>资讯缓存有效至</text><text class="meta-value">{{newsExpiresAt}}</text></view>
+    <view class="meta-row"><text>附近 POI / 交通</text><text class="meta-value">暂未接入</text></view>
+    <view wx:for="{{attributions}}" wx:key="*this" class="attribution">{{item}}</view>
+  </view>
+
+  <button class="refresh-button" loading="{{loading}}" disabled="{{loading}}" bindtap="refreshWorld">{{loading ? '同步中…' : '同步真实世界状态'}}</button>
+  <button wx:if="{{permissionDenied}}" class="permission-button" bindtap="openPermissions">打开定位权限设置</button>
+  <view class="privacy-note">真实版本只会在获得授权后读取前台位置，不做后台连续轨迹追踪。</view>
+</view>

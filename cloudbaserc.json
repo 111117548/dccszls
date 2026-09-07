@@ -1,0 +1,60 @@
+{
+  "$schema": "https://static.cloudbase.net/cli/cloudbaserc.schema.json",
+  "version": "2.0",
+  "functionRoot": "./cloudfunctions",
+  "functions": [
+    {
+      "name": "weatherSnapshot",
+      "runtime": "Nodejs18.15",
+      "handler": "index.main",
+      "timeout": 10,
+      "installDependency": false,
+      "envVariables": {
+        "QWEATHER_API_KEY": "{{env.QWEATHER_API_KEY}}",
+        "QWEATHER_API_HOST": "{{env.QWEATHER_API_HOST}}"
+      }
+    },
+    {
+      "name": "groupChat",
+      "runtime": "Nodejs18.15",
+      "handler": "index.main",
+      "timeout": 30,
+      "installDependency": true,
+      "envVariables": {
+        "DEEPSEEK_API_KEY": "{{env.DEEPSEEK_API_KEY}}",
+        "DEEPSEEK_API_HOST": "{{env.DEEPSEEK_API_HOST}}",
+        "DEEPSEEK_MODEL": "{{env.DEEPSEEK_MODEL}}"
+      }
+    },
+    {
+      "name": "localIntelSnapshot",
+      "runtime": "Nodejs18.15",
+      "handler": "index.main",
+      "timeout": 15,
+      "installDependency": false,
+      "envVariables": {
+        "TENCENTCLOUD_WSA_APIKEY": "{{env.TENCENTCLOUD_WSA_APIKEY}}"
+      }
+    },
+    {
+      "name": "groupPersistence",
+      "runtime": "Nodejs18.15",
+      "handler": "index.main",
+      "timeout": 10,
+      "installDependency": true,
+      "envVariables": {}
+    },
+    {
+      "name": "imageVision",
+      "runtime": "Nodejs18.15",
+      "handler": "index.main",
+      "timeout": 30,
+      "installDependency": true,
+      "envVariables": {
+        "TOKENHUB_API_KEY": "{{env.TOKENHUB_API_KEY}}",
+        "TOKENHUB_API_HOST": "{{env.TOKENHUB_API_HOST}}",
+        "VISION_MODEL": "{{env.VISION_MODEL}}"
+      }
+    }
+  ]
+}

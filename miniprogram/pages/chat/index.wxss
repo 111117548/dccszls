@@ -1,0 +1,46 @@
+.chat-page { display: flex; flex-direction: column; height: 100vh; background: #ededed; box-sizing: border-box; }
+.ai-banner { display: flex; align-items: center; justify-content: space-between; padding: 14rpx 24rpx; color: #735c23; background: #fff7dc; font-size: 22rpx; }
+.ai-banner > text { flex: 1; min-width: 0; line-height: 1.45; }
+.world-link { flex: none; margin-left: 16rpx; color: #4b704f; font-weight: 600; }
+.topic-strip { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; padding: 14rpx 24rpx; background: rgba(255,255,255,.88); border-bottom: 1rpx solid #e2e2e2; }
+.topic-copy { display: flex; align-items: baseline; gap: 12rpx; min-width: 0; }
+.mode-pill { flex: none; padding: 3rpx 9rpx; border-radius: 8rpx; color: #5f6b7a; background: #eef0f3; font-size: 18rpx; }
+.memory-link { flex: none; color: #4b704f; font-size: 19rpx; }
+.topic-kicker { flex: none; color: var(--muted); font-size: 20rpx; }
+.topic-title { overflow: hidden; max-width: 280rpx; font-size: 23rpx; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.message-list { flex: 1; min-height: 0; }
+.message-padding { padding: 24rpx 22rpx; }
+.system-message { width: fit-content; max-width: 600rpx; margin: 10rpx auto 30rpx; padding: 10rpx 18rpx; border-radius: 12rpx; color: #8d7951; background: rgba(255,247,220,.88); font-size: 21rpx; line-height: 1.5; text-align: center; }
+.message-row { display: flex; align-items: flex-start; gap: 18rpx; margin: 28rpx 0; }
+.user-row { justify-content: flex-end; }
+.user-message-content { display: flex; flex-direction: column; align-items: flex-end; gap: 10rpx; max-width: 520rpx; }
+.image-card { overflow: hidden; width: 420rpx; border-radius: 14rpx; background: #fff; box-shadow: 0 2rpx 10rpx rgba(0,0,0,.08); }
+.message-image { display: block; width: 420rpx; max-height: 560rpx; background: #e5e7ea; }
+.image-source-label { padding: 8rpx 12rpx; color: #848a92; background: #fff; font-size: 18rpx; text-align: right; }
+.message-content { max-width: 540rpx; }
+.speaker-line { display: flex; align-items: center; gap: 8rpx; margin: 0 0 8rpx 4rpx; color: #777d85; font-size: 21rpx; }
+.ai-tag { padding: 1rpx 7rpx; border-radius: 5rpx; color: #fff; background: #8d939a; font-size: 16rpx; }
+.bubble { position: relative; max-width: 520rpx; padding: 20rpx 22rpx; border-radius: 10rpx; box-sizing: border-box; font-size: 28rpx; line-height: 1.55; word-break: break-word; }
+.ai-bubble { background: #fff; }
+.user-bubble { background: #95ec69; }
+.typing-row { display: flex; align-items: center; gap: 12rpx; margin: 12rpx 0 0 94rpx; color: var(--muted); font-size: 21rpx; }
+.typing-dots { display: flex; gap: 6rpx; }
+.typing-dots text { width: 7rpx; height: 7rpx; border-radius: 50%; background: #8e939b; animation: pulse 1.2s infinite; }
+.typing-dots text:nth-child(2) { animation-delay: .15s; }
+.typing-dots text:nth-child(3) { animation-delay: .3s; }
+@keyframes pulse { 0%, 60%, 100% { opacity: .3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-4rpx); } }
+.scroll-spacer { height: 20rpx; }
+.composer-area { flex: none; border-top: 1rpx solid #d8d8d8; background: #f7f7f7; }
+.image-progress { display: flex; align-items: center; gap: 12rpx; padding: 12rpx 24rpx 0; color: #6f747b; font-size: 21rpx; line-height: 1.4; }
+.progress-spinner,
+.button-spinner { border: 3rpx solid #d4d7da; border-top-color: #57606a; border-radius: 50%; box-sizing: border-box; animation: spin .8s linear infinite; }
+.progress-spinner { width: 24rpx; height: 24rpx; }
+.button-spinner { width: 30rpx; height: 30rpx; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.composer { display: flex; align-items: center; gap: 14rpx; padding: 14rpx 20rpx calc(14rpx + env(safe-area-inset-bottom)); box-sizing: border-box; }
+.composer-input-shell { flex: 1; min-width: 0; height: 72rpx; border-radius: 10rpx; background: #fff; }
+.composer-input { width: 100%; height: 72rpx; min-width: 0; padding: 0 20rpx; box-sizing: border-box; font-size: 27rpx; }
+.attachment-button { display: flex; align-items: center; justify-content: center; flex: 0 0 64rpx; width: 64rpx; min-width: 64rpx; height: 64rpx; margin: 0; padding: 0; border: 3rpx solid #51565c; border-radius: 50%; color: #353a40; background: transparent; font-size: 38rpx; font-weight: 400; line-height: 58rpx; box-sizing: border-box; }
+.attachment-button[disabled] { border-color: #b6bbc0; color: #a3a7ac; background: transparent; }
+.send-button { flex: 0 0 108rpx; width: 108rpx; min-width: 108rpx; height: 64rpx; margin: 0; padding: 0; border-radius: 8rpx; color: #fff; background: var(--brand); font-size: 25rpx; line-height: 64rpx; box-sizing: border-box; }
+.send-active { color: #fff; background: var(--brand); }

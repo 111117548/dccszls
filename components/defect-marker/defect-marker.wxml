@@ -1,9 +1,0 @@
-<view
-  class="marker marker-{{defect.severity || 'moderate'}} {{compact ? 'marker-compact' : ''}}"
-  style="left:{{defect.markerX}}%;top:{{defect.markerY}}%;"
-  bindtap="onTap"
->
-  <view class="marker-pulse"></view>
-  <view class="marker-core">!</view>
-  <view class="marker-label" wx:if="{{!compact}}">{{defect.positionCode}}</view>
-</view>

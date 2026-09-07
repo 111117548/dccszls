@@ -1,0 +1,19 @@
+<view class="memory-page">
+  <view class="intro-card">
+    <view class="intro-title">{{groupName}}的记忆</view>
+    <view class="intro-copy">只保存你明确表达的偏好、近期计划和短期情绪。普通闲聊不会自动进入长期记忆。</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="empty-card">正在同步记忆…</view>
+  <view wx:elif="{{!memories.length}}" class="empty-card">目前没有保存的记忆。</view>
+
+  <view wx:for="{{memories}}" wx:key="id" class="memory-card">
+    <view class="memory-meta">
+      <text class="kind-tag">{{item.kindLabel}}</text>
+      <text>{{item.tierLabel}} · {{item.updatedLabel}}</text>
+    </view>
+    <view class="memory-content">{{item.content}}</view>
+  </view>
+
+  <button wx:if="{{memories.length}}" class="clear-button" bindtap="clearMemories">清除这个群的全部记忆</button>
+</view>

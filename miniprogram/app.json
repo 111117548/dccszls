@@ -1,0 +1,23 @@
+{
+  "pages": [
+    "pages/groups/index",
+    "pages/chat/index",
+    "pages/memory/index",
+    "pages/world/index"
+  ],
+  "window": {
+    "backgroundColor": "#f3f4f6",
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#f7f7f7",
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "Wchat"
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于获取当前位置的天气与位置变化；不会进行后台连续轨迹追踪"
+    }
+  },
+  "requiredPrivateInfos": ["getLocation"],
+  "sitemapLocation": "sitemap.json",
+  "style": "v2"
+}

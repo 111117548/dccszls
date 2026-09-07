@@ -1,0 +1,53 @@
+.page-shell { min-height: 100vh; }
+
+.prototype-note {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 18rpx 28rpx;
+  color: #735c23;
+  background: #fff7dc;
+  font-size: 24rpx;
+}
+
+.note-dot { width: 12rpx; height: 12rpx; border-radius: 50%; background: #e6a817; }
+.section-label { padding: 30rpx 28rpx 14rpx; color: var(--muted); font-size: 24rpx; }
+
+.group-row {
+  display: flex;
+  gap: 24rpx;
+  align-items: center;
+  padding: 24rpx 28rpx;
+  background: #fff;
+}
+
+.group-row-hover { background: #f7f8f8; }
+
+.group-avatar {
+  display: grid;
+  grid-template-columns: repeat(2, 40rpx);
+  grid-template-rows: repeat(2, 40rpx);
+  gap: 4rpx;
+  align-content: center;
+  justify-content: center;
+  width: 92rpx;
+  height: 92rpx;
+  border-radius: 18rpx;
+  background: #e9eaec;
+}
+
+.mini-avatar { display: flex; align-items: center; justify-content: center; border-radius: 8rpx; color: #fff; font-size: 18rpx; font-weight: 700; }
+.mini-avatar:nth-child(3) { grid-column: 1 / span 2; justify-self: center; width: 40rpx; }
+.group-main { flex: 1; min-width: 0; }
+.group-title-line, .group-preview-line { display: flex; align-items: center; justify-content: space-between; gap: 18rpx; }
+.group-name { font-size: 32rpx; font-weight: 600; }
+.group-name-wrap { display: flex; align-items: center; gap: 10rpx; min-width: 0; }
+.mode-tag { flex: none; padding: 2rpx 9rpx; border-radius: 7rpx; color: #667085; background: #f0f1f3; font-size: 18rpx; }
+.group-time { flex: none; color: #a2a6ad; font-size: 22rpx; }
+.group-preview-line { margin-top: 12rpx; }
+.group-preview { overflow: hidden; color: var(--muted); font-size: 25rpx; text-overflow: ellipsis; white-space: nowrap; }
+.unread { display: flex; align-items: center; justify-content: center; min-width: 34rpx; height: 34rpx; padding: 0 7rpx; border-radius: 20rpx; color: #fff; background: #fa5151; font-size: 20rpx; }
+
+.quiet-card { margin: 36rpx 28rpx; padding: 32rpx; border-radius: 20rpx; background: rgba(255,255,255,.72); }
+.quiet-title { font-size: 28rpx; font-weight: 600; }
+.quiet-copy { margin-top: 12rpx; color: var(--muted); font-size: 24rpx; line-height: 1.65; }
