@@ -31,7 +31,7 @@
 | `quality-ledger` | 质量记录和开放整改台账 |
 | `rectification-reminder` | 整改订阅提醒 |
 
-云端部署、集合权限和环境变量见[云开发部署](../CLOUD-DEPLOYMENT.md)；飞书应用配置见[飞书集成](../FEISHU-INTEGRATION.md)。
+云端部署、集合权限和环境变量见[云开发部署](./CLOUD-DEPLOYMENT.md)；飞书应用配置见[飞书集成](./FEISHU-INTEGRATION.md)。
 
 ## 安全原则
 

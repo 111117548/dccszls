@@ -81,35 +81,23 @@
         "type": "file"
       },
       {
-        "value": "CLOUD-DEPLOYMENT.md",
+        "value": "docs",
+        "type": "folder"
+      },
+      {
+        "value": ".github",
+        "type": "folder"
+      },
+      {
+        "value": "CONTRIBUTING.md",
         "type": "file"
       },
       {
-        "value": "FEISHU-INTEGRATION.md",
+        "value": "SECURITY.md",
         "type": "file"
       },
       {
-        "value": "CHANGELOG-V3.md",
-        "type": "file"
-      },
-      {
-        "value": "CHANGELOG-V4.1.md",
-        "type": "file"
-      },
-      {
-        "value": "CHANGELOG-V5.1.md",
-        "type": "file"
-      },
-      {
-        "value": "CHANGELOG-V5.2.md",
-        "type": "file"
-      },
-      {
-        "value": "CHANGELOG-V5.3.md",
-        "type": "file"
-      },
-      {
-        "value": "CHANGELOG-V6.0.md",
+        "value": "LICENSE",
         "type": "file"
       }
     ],

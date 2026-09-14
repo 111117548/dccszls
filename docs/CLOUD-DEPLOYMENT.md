@@ -114,7 +114,7 @@
 
 部署该函数后，配置环境变量 `FEISHU_APP_ID`、`FEISHU_APP_SECRET`、`FEISHU_BITABLE_APP_TOKEN`、`FEISHU_TABLE_ID`。同时进入云开发控制台的函数详情/高级配置，将 `feishu-rectification` 的“执行超时”设置为 30 秒或 60 秒并保存。若报错中仍出现 `timed out after 3 seconds`，说明云端仍在使用默认 3 秒配置，不能只依赖本地 `config.json` 的显示。
 
-完整字段映射、授权要求和验收步骤见 [FEISHU-INTEGRATION.md](./FEISHU-INTEGRATION.md)。
+完整字段映射、授权要求和验收步骤见[飞书集成说明](./FEISHU-INTEGRATION.md)。
 
 ## 7. 验收顺序
 

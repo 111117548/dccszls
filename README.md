@@ -136,6 +136,8 @@ git clone https://github.com/111117548/dccszls.git
 cd dccszls
 ```
 
+不使用 Git 的体验者可直接下载[当前版本源码包](https://github.com/111117548/dccszls/archive/refs/heads/main.zip)，解压后导入微信开发者工具。该链接始终对应 `main` 分支当前版本，仓库内不重复存放 ZIP。
+
 1. 在微信开发者工具中选择“导入项目”。
 2. 选择仓库根目录，项目类型选择“小程序”。
 3. 使用自己的测试AppID，或按团队要求配置项目AppID。
@@ -143,8 +145,8 @@ cd dccszls
 
 真实AI、跨设备协作、Excel下载、订阅提醒与飞书回传需要部署云函数。参见：
 
-- [云开发部署说明](./CLOUD-DEPLOYMENT.md)
-- [飞书集成说明](./FEISHU-INTEGRATION.md)
+- [云开发部署说明](./docs/CLOUD-DEPLOYMENT.md)
+- [飞书集成说明](./docs/FEISHU-INTEGRATION.md)
 
 ## 测试
 
@@ -166,9 +168,7 @@ GitHub Actions会在推送和Pull Request时运行同一组核心检查。
 ├─ cloudfunctions/             AI、质量台账、通知、飞书与报表云函数
 ├─ utils/                      领域模型、进度、质量与协作工具
 ├─ tests/                      业务回归、迁移和静态检查
-├─ docs/                       架构、演示与宣传素材
-├─ CLOUD-DEPLOYMENT.md         微信云开发部署
-└─ FEISHU-INTEGRATION.md       飞书集成与权限配置
+└─ docs/                       架构、部署、集成、版本记录与宣传素材
 ```
 
 ## 演示数据与安全边界
@@ -191,7 +191,7 @@ GitHub Actions会在推送和Pull Request时运行同一组核心检查。
 
 ## 版本记录
 
-当前仓库由早期检查工具逐步演进为施工质量与数字孪生平台。详细历史保留在各版本`CHANGELOG-*.md`中；公开发布以GitHub Releases为准。
+当前仓库只保留可直接运行的最新代码。关键演进节点见[版本记录](./docs/CHANGELOG.md)，完整修改细节可通过 Git 提交历史追溯。
 
 ## 许可与品牌
 
