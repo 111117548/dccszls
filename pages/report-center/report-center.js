@@ -160,6 +160,10 @@ Page({
     if (!silent) wx.showToast({ title: '日报已暂存', icon: 'success' });
   },
 
+  openFeatureGuide: function () {
+    wx.navigateTo({ url: '/pages/feature-guide/feature-guide?feature=daily' });
+  },
+
   copyReport: function () {
     var todayItems = compactItems(this.data.todayItems);
     var tomorrowItems = compactItems(this.data.tomorrowItems);

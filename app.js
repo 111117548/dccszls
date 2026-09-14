@@ -22,7 +22,11 @@ function makeFeishuSnapshot(task, context) {
     title: title,
     description: description,
     qualityIssue: description,
+    projectName: task.projectName || context.feishuProjectName || context.projectName || '',
     deviceName: task.deviceName || context.deviceName || '',
+    location: task.location || '',
+    category: task.category || '',
+    level: task.level || '',
     positionCode: task.location || '',
     inspectionMethodName: '飞书整改通知',
     deadline: task.deadline || '',
@@ -1003,6 +1007,8 @@ App({
           collaborationMode: 'OPEN_LINK',
           sourceType: 'FEISHU_BITABLE',
           feishuRecordId: task.recordId,
+          feishuProjectName: context.feishuProjectName || '',
+          feishuDeviceName: context.feishuDeviceName || '',
           feishuSource: result.diagnostics && result.diagnostics.appToken && result.diagnostics.tableId
             ? { appToken: result.diagnostics.appToken, tableId: result.diagnostics.tableId }
             : (previous && previous.feishuSource || null),

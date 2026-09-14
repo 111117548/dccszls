@@ -27,7 +27,7 @@
         <text>{{modelStageName}}</text>
       </view>
       <view class="home-v7-model" style="height:{{modelViewportHeightPx}}px">
-        <construction-twin-3d wx:if="{{modelCanvasVisible}}" style="height:{{modelViewportHeightPx}}px" viewport-height="{{modelViewportHeightPx}}" light="{{true}}" minimal="{{true}}" animate-assembly="{{true}}" play-token="{{modelReplayToken}}" project-name="{{project.name}}" device-name="{{project.deviceName}}" stage-index="{{modelStageIndex}}" stage-name="{{modelStageName}}" bind:parttap="onTwinPartTap" />
+        <construction-twin-3d wx:if="{{modelCanvasVisible}}" style="height:{{modelViewportHeightPx}}px" viewport-height="{{modelViewportHeightPx}}" light="{{true}}" minimal="{{true}}" animate-assembly="{{true}}" play-token="{{modelReplayToken}}" project-name="{{modelProjectName}}" device-name="{{modelDeviceName}}" stage-index="{{modelStageIndex}}" stage-name="{{modelStageName}}" component-progress="{{constructionStages}}" bind:parttap="onTwinPartTap" />
         <view wx:else class="model-paused" style="height:{{modelViewportHeightPx}}px">
           <view class="model-paused-icon"><image src="/assets/icon-review-v1/01-esp-unit.svg" mode="aspectFit" aria-label="电除尘设备"></image></view>
           <text>模型预览已暂停</text><label>关闭选择窗口后继续浏览</label>

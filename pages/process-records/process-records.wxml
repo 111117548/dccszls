@@ -1,4 +1,7 @@
 <view class="screen records-screen">
+  <view class="feature-guide-entry" bindtap="openFeatureGuide" hover-class="ux-press" role="button">
+    <view class="feature-guide-icon">?</view><view class="feature-guide-copy"><text>检验记录使用说明</text><label>选表、填写、暂存完成与导出归档</label></view><text class="feature-guide-arrow">›</text>
+  </view>
   <view class="records-progress-card">
     <view class="records-overview-head">
       <view>

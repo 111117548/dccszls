@@ -3,6 +3,7 @@
     "pages/index/index",
     "pages/workbench/workbench",
     "pages/feature-coming-soon/feature-coming-soon",
+    "pages/feature-guide/feature-guide",
     "pages/today/today",
     "pages/profile/profile",
     "pages/api-management/api-management",

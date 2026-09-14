@@ -28,7 +28,7 @@
       </view>
       <view class="problem-description">{{order.taskDescription || (feishuRefreshing ? '正在读取质量问题说明…' : (feishuEvidenceError ? '质量问题说明读取失败' : '暂未填写质量问题说明'))}}</view>
       <view class="problem-position"><text>问题位置</text><label>{{order.taskPositionText}}</label></view>
-      <view class="problem-photo-head"><text>问题图片</text><label>{{feishuRefreshing ? '读取中' : (feishuEvidenceError ? '待确认' : order.sourcePhotoCount + ' 张')}}</label></view>
+      <view class="problem-photo-head"><text>问题图片</text><label>{{feishuRefreshing ? '读取中' : (order.sourcePhotoCount ? order.sourcePhotoCount + ' 张 · 点击查看' : (feishuEvidenceError ? '待确认' : '0 张'))}}</label></view>
       <view class="problem-photo-grid" wx:if="{{order.beforePhotos.length}}">
         <view class="problem-photo-cell" wx:for="{{order.beforePhotos}}" wx:key="*this">
           <image src="{{item}}" mode="aspectFill" bindtap="previewPhoto" binderror="onProblemPhotoError" data-index="{{index}}" data-url="{{item}}" data-group="before"></image>

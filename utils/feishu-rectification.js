@@ -1,5 +1,5 @@
 var FUNCTION_NAME = 'feishu-rectification';
-var EXPECTED_API_VERSION = 'feishu-user-visible-projects-v14-evidence-source';
+var EXPECTED_API_VERSION = 'feishu-user-visible-projects-v15-evidence-relink';
 // Permission labels are part of this cache. Bump the key whenever the
 // server-side permission source changes so an old “仅查看” result cannot
 // survive a newly deployed permission fix.
@@ -75,6 +75,9 @@ function clearCaches() {
 
 function deploymentMessage(action, message, detail) {
   var text = String(message || '');
+  if (detail && detail.apiVersion && detail.apiVersion !== EXPECTED_API_VERSION) {
+    return '云端飞书同步函数仍是旧版本。请重新上传并部署 feishu-rectification，选择“云端安装依赖”。';
+  }
   if (Number(detail && detail.feishuCode) === 1254043 || /RecordIdNotFound/.test(text)) {
     return '当前飞书数据表中找不到这条质量问题，暂时无法读取说明和图片。请项目负责人核对原记录是否删除或迁移，并核对同步的数据表；确认后从质量检查台账重新同步任务。';
   }

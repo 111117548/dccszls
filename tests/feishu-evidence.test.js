@@ -115,7 +115,9 @@ function pageHarness(response) {
     evidencePhotos: ['cloud://submitted'], feishuSnapshot: { sourceImages: [{ url: 'https://old.example.com/p2' }] } };
   const app = { getRectificationOrder: () => local, getV3State: () => ({ project: { id: 'p' } }),
     loadOpenRectification: async () => local, canEditCurrentProject: () => true,
-    getFeishuProjectContext: () => ({ projectName: '项目甲', unitNo: '1#' }) };
+    getFeishuProjectContext: () => ({ projectName: '项目甲', unitNo: '1#' }),
+    mergeRectificationOrder: incoming => Object.assign(local, incoming),
+    saveV3State() {}, _syncOpenRectificationOrder: async () => local };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'pages/rectification-detail/rectification-detail.js'), 'utf8'), {
     getApp: () => app, Page: value => { definition = value; }, console,
     require: name => name.includes('feishu-rectification') ? { getTaskEvidence: payload => { requests.push(payload); return response(); } } : {},
@@ -137,6 +139,45 @@ test('shared detail refreshes full issue text and photos without changing status
   assert.equal(page.data.order.sourceAttachmentCount, 2);
   assert.equal(page.data.order.status, 'pending');
   assert.deepEqual(Array.from(page.data.order.afterPhotos), ['cloud://submitted']);
+});
+
+test('detail accepts a unique server-verified replacement record and displays its problem photos', async () => {
+  const { page } = pageHarness(async () => ({
+    relinkedFromRecordId: 'trusted-record',
+    source: { appToken: 'app', tableId: 'table' },
+    task: { recordId: 'replacement-record', description: '钢支架连接处漏焊',
+      sourceImages: [{ url: 'https://new.example.com/problem.jpg' }], closureImages: [] }
+  }));
+  page.data.fromShare = false;
+  await page.loadOrder();
+  assert.equal(page.data.order.feishuRecordId, 'replacement-record');
+  assert.equal(page.data.order.taskDescription, '钢支架连接处漏焊');
+  assert.deepEqual(Array.from(page.data.order.beforePhotos), ['https://new.example.com/problem.jpg']);
+});
+
+test('missing record relinks only when one current Feishu row is a strong unique match', async () => {
+  const { context } = cloudHarness(null);
+  context.replacement = { record_id: 'replacement-record', fields: {
+    '存在质量问题': '钢支架连接处漏焊', '项目名称': '项目甲', '炉号': '1#', '问题': []
+  } };
+  vm.runInContext(`
+    getRecord = async () => { throw Object.assign(new Error('missing'), { code: 'FEISHU_RECORD_NOT_FOUND', feishuCode: 1254043 }); };
+    searchProjectRecords = async () => [replacement];
+  `, context);
+  const result = await context.exports.main({ action: 'getTaskEvidence', recordId: 'old-record',
+    project: { feishuProjectName: '项目甲', feishuDeviceName: '1#' },
+    locator: { description: '钢支架连接处漏焊' } });
+  assert.equal(result.success, true);
+  assert.equal(result.relinkedFromRecordId, 'old-record');
+  assert.equal(result.task.recordId, 'replacement-record');
+
+  context.secondReplacement = { record_id: 'another-record', fields: Object.assign({}, context.replacement.fields) };
+  vm.runInContext('searchProjectRecords = async () => [replacement, secondReplacement];', context);
+  const ambiguous = await context.exports.main({ action: 'getTaskEvidence', recordId: 'old-record',
+    project: { feishuProjectName: '项目甲', feishuDeviceName: '1#' },
+    locator: { description: '钢支架连接处漏焊' } });
+  assert.equal(ambiguous.success, false);
+  assert.equal(ambiguous.code, 'FEISHU_RECORD_NOT_FOUND');
 });
 
 test('empty refreshed attachments remove stale photos; failure is visible without breaking task', async () => {

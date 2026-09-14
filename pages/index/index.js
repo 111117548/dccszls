@@ -88,6 +88,8 @@ Page({
     modelCanvasVisible: true,
     modelReplayToken: 0,
     modelViewportHeightPx: 340,
+    modelProjectName: '',
+    modelDeviceName: '',
     config: { provider: 'qwen', endpoint: '', model: '', demoMode: true },
     featureSettings: { autoAreaDetect: true, qualityCheck: true },
     aiServiceStatus: 'unknown',
@@ -198,6 +200,8 @@ Page({
         stage: context.stage.name
       }),
       device: context.device,
+      modelProjectName: String(context.project && (context.project.shortName || context.project.name) || ''),
+      modelDeviceName: String(context.device && context.device.name || ''),
       projects: projects,
       projectNames: projects.map(function (item) { return item.name; }),
       projectCards: projectCards,

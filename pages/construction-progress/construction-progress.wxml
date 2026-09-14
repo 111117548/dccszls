@@ -1,4 +1,7 @@
 <view class="screen warning-screen">
+  <view class="feature-guide-entry" bindtap="openFeatureGuide" hover-class="ux-press" role="button">
+    <view class="feature-guide-icon">?</view><view class="feature-guide-copy"><text>到货与安装使用说明</text><label>需求清单、到货登记、进度填报与异常处理</label></view><text class="feature-guide-arrow">›</text>
+  </view>
   <view class="stage-card">
     <view class="card-head">
       <view><text class="card-eyebrow">部件概况</text><text class="stage-title">{{stage.name}}</text><text class="stage-source">数据来源：{{summarySource}}</text></view>

@@ -763,6 +763,10 @@ Page({
     });
   },
 
+  openFeatureGuide: function () {
+    wx.navigateTo({ url: '/pages/feature-guide/feature-guide?feature=qualityLedger' });
+  },
+
   exportHistory: function () {
     var records = this.data.records;
     if (!records || records.length === 0) {

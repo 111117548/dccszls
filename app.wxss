@@ -211,3 +211,42 @@ button { min-height: 80rpx; border-radius: var(--radius-md); }
 .sheet-handle { background: #d9d9d9; }
 .sheet-head text { font-size: 32rpx; font-weight: 700; }
 .sheet-head button { border-color: #91caff; border-radius: 12rpx; }
+
+/* Shared entry shown inside every workbench feature. */
+.feature-guide-entry {
+  display: flex;
+  min-height: 92rpx;
+  align-items: center;
+  margin: 20rpx 24rpx;
+  padding: 16rpx 20rpx;
+  border: 1rpx solid #b9d9ec;
+  border-left: 6rpx solid #178bd6;
+  border-radius: 14rpx;
+  color: #183a51;
+  background: linear-gradient(100deg, #f5fbff, #ffffff);
+  box-shadow: 0 4rpx 16rpx rgba(19, 91, 133, .05);
+}
+.feature-guide-entry .feature-guide-icon {
+  display: flex;
+  flex: 0 0 50rpx;
+  width: 50rpx;
+  height: 50rpx;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16rpx;
+  border: 1rpx solid #7dbfe3;
+  border-radius: 8rpx;
+  color: #fff;
+  background: #178bd6;
+  font-size: 25rpx;
+  font-weight: 800;
+}
+.feature-guide-entry .feature-guide-copy { flex: 1; min-width: 0; }
+.feature-guide-entry .feature-guide-copy text,
+.feature-guide-entry .feature-guide-copy label { display: block; }
+.feature-guide-entry .feature-guide-copy text { font-size: 25rpx; font-weight: 700; }
+.feature-guide-entry .feature-guide-copy label { margin-top: 3rpx; color: #718698; font-size: 19rpx; }
+.feature-guide-entry .feature-guide-arrow { margin-left: 12rpx; color: #178bd6; font-size: 34rpx; font-weight: 300; }
+.feature-guide-entry.guide-planned { border-left-color: #d78b00; border-color: #ead7ad; background: linear-gradient(100deg, #fffaf0, #fff); }
+.feature-guide-entry.guide-planned .feature-guide-icon { border-color: #e1b45b; background: #d78b00; }
+.feature-guide-entry.guide-planned .feature-guide-arrow { color: #d78b00; }

@@ -1,0 +1,27 @@
+name: quality-checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  node-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Business regression tests
+        run: node --test tests/*.test.js
+      - name: Static project checks
+        run: node tests/static-check.js
+      - name: Runtime smoke test
+        run: node tests/runtime-smoke.js

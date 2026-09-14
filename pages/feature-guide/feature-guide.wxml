@@ -1,0 +1,80 @@
+<view class="guide-page">
+  <view class="guide-hero">
+    <view class="hero-grid"></view>
+    <view class="hero-top">
+      <view class="hero-icon"><image src="{{guide.icon}}" mode="aspectFit" aria-label="{{guide.name}}"></image></view>
+      <text class="status-chip {{guide.live ? 'live' : 'planned'}}">{{guide.status}}</text>
+    </view>
+    <text class="hero-kicker">FEATURE GUIDE · 功能使用说明</text>
+    <text class="hero-title">{{guide.name}}</text>
+    <text class="hero-purpose">{{guide.purpose}}</text>
+  </view>
+
+  <view wx:if="{{guide.introduction}}" class="feature-intro-card">
+    <text class="intro-kicker">功能介绍</text>
+    <text class="intro-title">{{guide.introduction.title}}</text>
+    <text class="intro-description">{{guide.introduction.description}}</text>
+
+    <view class="problem-box">
+      <view class="problem-icon">!</view>
+      <view><text>它解决什么问题</text><label>{{guide.introduction.problem}}</label></view>
+    </view>
+
+    <view class="capability-heading"><text>为什么要使用</text><label>3 项核心能力</label></view>
+    <view class="capability-list">
+      <view class="capability-item" wx:for="{{guide.introduction.capabilities}}" wx:key="number">
+        <view class="capability-number">{{item.number}}</view>
+        <view class="capability-copy"><text>{{item.title}}</text><label>{{item.text}}</label></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="guide-tip">
+    <view class="tip-mark">i</view>
+    <text>{{guide.tip}}</text>
+  </view>
+
+  <view class="steps-heading">
+    <view><text>操作步骤</text><label>点击每一步查看要求、操作与异常处理</label></view>
+    <text class="step-count">共 {{guide.steps.length}} 步</text>
+  </view>
+
+  <view class="step-list">
+    <view class="step-card {{activeStep === index ? 'expanded' : ''}}" wx:for="{{guide.steps}}" wx:key="title">
+      <view class="step-head" data-index="{{index}}" bindtap="toggleStep" hover-class="step-pressed" role="button" aria-label="{{item.title}}">
+        <view class="step-number"><text>0{{index + 1}}</text></view>
+        <view class="step-copy"><text>{{item.title}}</text><label>{{item.summary}}</label></view>
+        <view class="step-toggle">{{activeStep === index ? '−' : '+'}}</view>
+      </view>
+
+      <view wx:if="{{activeStep === index}}" class="step-detail">
+        <view class="detail-row {{detail.tone === 'warning' ? 'warning' : ''}}" wx:for="{{item.details}}" wx:for-item="detail" wx:for-index="detailIndex" wx:key="title">
+          <view class="detail-symbol">{{detail.tone === 'warning' ? '!' : detailIndex + 1}}</view>
+          <view><text>{{detail.title}}</text><label>{{detail.text}}</label></view>
+        </view>
+
+        <view wx:if="{{item.image}}" class="guide-photo" data-image="{{item.image}}" bindtap="previewGuideImage">
+          <image src="{{item.image}}" mode="widthFix" aria-label="{{item.screenshot}}"></image>
+          <text>{{item.screenshot}} · 点击查看大图</text>
+        </view>
+        <view wx:else class="screen-example">
+          <view class="screen-toolbar"><view class="screen-dot first"></view><view class="screen-dot"></view><view class="screen-dot"></view><text>界面位置示意</text></view>
+          <view class="screen-body">
+            <view class="screen-line strong"></view>
+            <view class="screen-line"></view>
+            <view class="screen-panels"><view></view><view></view><view></view></view>
+            <view class="screen-button"></view>
+          </view>
+          <text class="screen-caption">{{item.screenshot}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="guide-footer">
+    <button class="continue-button {{guide.live ? '' : 'disabled'}}" bindtap="continueFeature">
+      <text>{{guide.live ? '返回继续使用' : '正在开发中 · 敬请期待'}}</text>
+    </button>
+    <text>如遇说明未覆盖的问题，请截图并反馈项目管理员。</text>
+  </view>
+</view>

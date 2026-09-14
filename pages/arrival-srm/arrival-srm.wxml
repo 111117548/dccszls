@@ -1,4 +1,7 @@
 <view class="screen arrival-screen">
+  <view class="feature-guide-entry" bindtap="openFeatureGuide" hover-class="ux-press" role="button">
+    <view class="feature-guide-icon">?</view><view class="feature-guide-copy"><text>到货与安装使用说明</text><label>需求清单、到货登记、进度填报与异常处理</label></view><text class="feature-guide-arrow">›</text>
+  </view>
   <view class="panel overview-panel arrival-overview-card">
     <view class="overview-head">
       <view>

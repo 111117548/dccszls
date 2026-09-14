@@ -248,6 +248,8 @@ Page({
 
   openArrivalLedger: function () { wx.navigateTo({ url: '/pages/arrival-srm/arrival-srm' }); },
 
+  openFeatureGuide: function () { wx.navigateTo({ url: '/pages/feature-guide/feature-guide?feature=progress' }); },
+
   handleAlert: function () {
     if (!this.data.activeRatioAlert || this.data.handlingAlert) return;
     var self = this;

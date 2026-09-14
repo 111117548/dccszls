@@ -109,5 +109,8 @@ Page({
   },
   goExport: function () {
     wx.navigateTo({ url: '/pages/process-export/process-export' });
+  },
+  openFeatureGuide: function () {
+    wx.navigateTo({ url: '/pages/feature-guide/feature-guide?feature=records' });
   }
 });

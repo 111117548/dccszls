@@ -5,7 +5,7 @@
   <view class="loading" wx:if="{{loading && !fallback}}">
     <view class="loading-cube"></view>
     <text class="state-title">正在装载工程模型</text>
-    <label class="state-subtitle">双室电除尘器 · GLB 2.0</label>
+    <label class="state-subtitle">电除尘器施工孪生 · 原生 WebGL</label>
   </view>
 
   <view class="fallback" wx:if="{{fallback}}">
@@ -19,9 +19,9 @@
     <label class="model-source">{{modelCaption}}</label>
   </view>
   <view class="assembly-status" wx:if="{{ready && assembling}}">
-    <view class="assembly-status-head"><text>施工顺序回放</text><label>{{assemblyStepText}}</label></view>
+    <view class="assembly-status-head"><text class="assembly-status-title">施工顺序回放</text><label class="assembly-status-step">{{assemblyStepText}}</label></view>
     <view class="assembly-stage-name">{{assemblyStageLabel}}</view>
-    <view class="assembly-track"><view style="width:{{assemblyProgress}}%"></view></view>
+    <view class="assembly-track"><view class="assembly-track-fill" style="width:{{assemblyProgress}}%"></view></view>
     <label class="assembly-hint">部件从顶部落位 · 触摸模型可跳过</label>
   </view>
   <button class="spatial-marker" wx:for="{{markers}}" wx:key="id" style="left:{{item.markerX}}%;top:{{item.markerY}}%;" data-index="{{index}}" catchtap="markerTap" aria-label="查看缺陷 {{item.defectType || item.name}}">!</button>

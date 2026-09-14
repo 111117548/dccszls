@@ -1,6 +1,10 @@
 <view class="daily-page">
   <view class="shared-brand-bar"><image src="/images/brand/zijin-longking-horizontal.png" mode="aspectFit" aria-label="紫金龙净"></image><view><text>工程质量数字化平台</text><label>ENGINEERING QUALITY</label></view></view>
 
+  <view class="feature-guide-entry" bindtap="openFeatureGuide" hover-class="ux-press" role="button">
+    <view class="feature-guide-icon">?</view><view class="feature-guide-copy"><text>施工日报使用说明</text><label>进度关联、内容修改、暂存与次日继承</label></view><text class="feature-guide-arrow">›</text>
+  </view>
+
   <view class="daily-overview-card">
     <view class="daily-overview-head">
       <view>

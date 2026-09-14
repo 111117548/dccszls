@@ -715,6 +715,66 @@ function mapRecord(record, fieldMap) {
   };
 }
 
+function fingerprintText(value) {
+  return text(value).toLowerCase().replace(/[\s·•，,。:：；;、（）()\[\]【】_-]+/g, '');
+}
+
+function evidenceLocator(order) {
+  order = order || {};
+  const snapshot = order.feishuSnapshot || {};
+  const item = snapshot.item || ((order.items || [])[0]) || {};
+  return {
+    title: order.title || snapshot.title || item.name || '',
+    description: order.qualityIssue || snapshot.qualityIssue || snapshot.description || item.description || order.description || '',
+    location: order.location || order.positionCode || snapshot.location || snapshot.positionCode || item.location || item.positionCode || '',
+    category: order.category || snapshot.category || item.category || '',
+    level: order.level || snapshot.level || item.level || ''
+  };
+}
+
+function selectReplacementRecord(records, fieldMap, locator) {
+  locator = locator || {};
+  const expected = {
+    title: fingerprintText(locator.title),
+    description: fingerprintText(locator.description),
+    location: fingerprintText(locator.location),
+    category: fingerprintText(locator.category),
+    level: fingerprintText(locator.level)
+  };
+  const scored = (records || []).map(record => {
+    const task = mapRecord(record, fieldMap);
+    const actual = {
+      title: fingerprintText(task.title), description: fingerprintText(task.description),
+      location: fingerprintText(task.location), category: fingerprintText(task.category), level: fingerprintText(task.level)
+    };
+    let score = 0; let strong = false;
+    if (expected.description && expected.description === actual.description) { score += 100; strong = true; }
+    if (expected.title && expected.title === actual.title) { score += 80; strong = true; }
+    const sameLocation = !!expected.location && expected.location === actual.location;
+    const sameCategory = !!expected.category && expected.category === actual.category;
+    if (sameLocation) score += 30;
+    if (sameCategory) score += 20;
+    if (sameLocation && sameCategory) strong = true;
+    if (expected.level && expected.level === actual.level) score += 5;
+    return { record, score, strong };
+  }).filter(item => item.strong && item.score >= 50).sort((a, b) => b.score - a.score);
+  if (!scored.length || (scored[1] && scored[1].score === scored[0].score)) return null;
+  return scored[0].record;
+}
+
+async function readEvidenceRecord(token, c, schema, recordId, project, locator) {
+  try {
+    return { record: await getRecord(token, c, recordId), relinkedFromRecordId: '' };
+  } catch (error) {
+    if (error.code !== 'FEISHU_RECORD_NOT_FOUND' && Number(error.feishuCode) !== 1254043) throw error;
+    if (!String(project && project.feishuProjectName || '').trim() || !String(project && project.feishuDeviceName || '').trim()) throw error;
+    const candidates = await searchProjectRecords(token, c, project, schema.fields);
+    const replacement = selectReplacementRecord(candidates, schema.fields, locator);
+    if (!replacement) throw error;
+    return { record: replacement, relinkedFromRecordId: String(recordId) };
+  }
+}
+
 function multipartBody(fields, file) {
   const boundary = '----ESPFeishu' + Date.now().toString(16);
   const parts = [];
@@ -808,7 +868,7 @@ async function verifyAttachmentWrite(token, c, recordId, fieldName, expectedToke
   throw new Error('飞书更新接口已返回成功，但再次读取记录时未找到本次上传的附件，请稍后重试核验');
 }
 
-const API_VERSION = 'feishu-user-visible-projects-v14-evidence-source';
+const API_VERSION = 'feishu-user-visible-projects-v15-evidence-relink';
 
 function taskCacheKey(c, project) {
   return [
@@ -863,8 +923,9 @@ exports.main = async function (event) {
       // The share capability grants read access to ONE stored task only. Never
       // use a caller-supplied record ID or attachment token with the tenant token.
       if (!event.projectId || !event.orderId) throw new Error('缺少整改任务信息');
-      const stored = (await db.collection('quality-rectification-orders')
-        .doc(safeId(event.projectId) + '__' + safeId(event.orderId)).get()).data;
+      const storedRef = db.collection('quality-rectification-orders')
+        .doc(safeId(event.projectId) + '__' + safeId(event.orderId));
+      const stored = (await storedRef.get()).data;
       const hash = require('crypto').createHash('sha256').update(String(event.shareToken)).digest('hex');
       if (!stored || !stored.shareTokenHash || hash !== stored.shareTokenHash ||
           stored.projectId !== event.projectId || stored.id !== event.orderId) {
@@ -874,10 +935,28 @@ exports.main = async function (event) {
       assertEvidenceSource(stored.feishuSource, c);
       const token = await tenantToken(c);
       const schema = await resolvedSchema(token, c);
-      const record = await getRecord(token, c, stored.feishuRecordId);
+      const storedProject = {
+        feishuProjectName: stored.feishuProjectName || stored.projectName || '',
+        feishuDeviceName: stored.feishuDeviceName || stored.deviceName || ''
+      };
+      const evidenceRead = await readEvidenceRecord(token, c, schema, stored.feishuRecordId, storedProject, evidenceLocator(stored));
+      const record = evidenceRead.record;
       if (!record.record_id) throw new Error('飞书记录不存在或无权读取');
       const result = await resolveEvidence(mapRecord(record, schema.fields), token, request, startedAt + 24000);
-      return Object.assign({ success: true, apiVersion: API_VERSION }, result);
+      if (evidenceRead.relinkedFromRecordId && storedRef.update) {
+        try {
+          await storedRef.update({ data: {
+            feishuRecordId: record.record_id,
+            feishuSource: { appToken: c.appToken, tableId: c.tableId },
+            feishuRelinkedAt: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })
+          } });
+        } catch (updateError) { console.error('[feishu-rectification] persist evidence relink failed', updateError); }
+      }
+      return Object.assign({
+        success: true, apiVersion: API_VERSION,
+        relinkedFromRecordId: evidenceRead.relinkedFromRecordId,
+        source: { appToken: c.appToken, tableId: c.tableId }
+      }, result);
     }
     const identity = await requireBoundIdentity();
     // OAuth-bound users read with their user token and do not need a tenant
@@ -889,12 +968,17 @@ exports.main = async function (event) {
       if (!event.recordId) throw new Error('缺少飞书记录编号');
       assertEvidenceSource(event.source, c);
       const schema = await resolvedSchema(readToken, c);
-      const record = await getRecord(readToken, c, String(event.recordId));
+      const evidenceRead = await readEvidenceRecord(readToken, c, schema, String(event.recordId), event.project || {}, event.locator || {});
+      const record = evidenceRead.record;
       if (!record.record_id || !recordMatchResult(record, event.project || {}, schema.fields).matched) {
         throw new Error('该飞书任务不属于当前项目和炉号，或无权读取');
       }
       const result = await resolveEvidence(mapRecord(record, schema.fields), readToken, request, startedAt + 24000);
-      return Object.assign({ success: true, apiVersion: API_VERSION }, result);
+      return Object.assign({
+        success: true, apiVersion: API_VERSION,
+        relinkedFromRecordId: evidenceRead.relinkedFromRecordId,
+        source: { appToken: c.appToken, tableId: c.tableId }
+      }, result);
     }
     const visibilitySource = identity.authMode === 'phone' ? 'phone_identity_app_token' : 'user_access_token';
     const visibilityKey = userTableCacheKey(c, identity);

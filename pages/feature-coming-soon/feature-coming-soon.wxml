@@ -3,6 +3,9 @@
     <image src="/images/brand/zijin-longking-horizontal.png" mode="aspectFit" aria-label="紫金龙净"></image>
     <view><text>工程质量数字化平台</text><label>ENGINEERING QUALITY</label></view>
   </view>
+  <view class="feature-guide-entry guide-planned" bindtap="openFeatureGuide" hover-class="ux-press" role="button">
+    <view class="feature-guide-icon">?</view><view class="feature-guide-copy"><text>{{featureName}}使用说明</text><label>查看规划功能、操作步骤与异常处理</label></view><text class="feature-guide-arrow">›</text>
+  </view>
   <view class="coming-soon-card">
     <view class="feature-icon"><image src="{{icon}}" mode="aspectFit" aria-label="{{featureName}}"></image></view>
     <text class="feature-name">{{featureName}}</text>

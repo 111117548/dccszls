@@ -141,25 +141,19 @@ test('legacy quality references remain connected to merged nodes without changin
   assert.equal(old.defects[0].constructionStageId,'stage-10');
   assert.equal(domain.getNodeById('foundation-beam').stageId,'stage-03');
 });
-test('existing GLB anchors resolve to new categories and assembly steps contain real geometry only', () => {
-  let component;
-  const source = fs.readFileSync(path.join(root,'components/construction-twin-3d/construction-twin-3d.js'),'utf8');
-  const context = { Component:value=>{component=value;}, require:()=>catalog };
-  vm.runInNewContext(source + '\nthis.resolveStage = stageForNode;',context);
-  assert.equal(context.resolveStage('STAGE_02_FOUNDATION_BEAM',0),1);
-  assert.equal(context.resolveStage('STAGE_03_STEEL',0),1);
-  assert.equal(context.resolveStage('STAGE_01_SUPPORT',0),2);
-  assert.equal(context.resolveStage('STAGE_10_HV',0),11);
-  assert.equal(context.resolveStage('STAGE_12_INSULATION',0),8);
-  const b = fs.readFileSync(path.join(root,'assets/models/esp-two-chamber-assembled.glb'));
-  const doc = JSON.parse(b.subarray(20,20+b.readUInt32LE(12)).toString().trim());
-  const instance = {modelDoc:doc, ...component.methods};
-  const hopper = instance.collectInstances(3);
-  assert.deepEqual([...new Set(hopper.map(i=>i.stage))].sort(), [1,2,3]);
-  assert.deepEqual(plain(instance.assemblySequence(3)), [1,2,3]);
-  assert.ok(instance.collectInstances(11).filter(i=>i.stage===11).length>0);
-  assert.ok(instance.collectInstances(8).filter(i=>i.stage===8).length>0);
-  assert.equal(instance.collectInstances(1).filter(i=>i.stage===2).length,0);
+test('native WebGL scene keeps all 13 component categories and clips later assembly geometry', () => {
+  const Scene = require('../components/construction-twin-3d/diorama/diorama');
+  const scene = new Scene('low');
+  for (let index = 1; index <= 13; index += 1) {
+    const id = 'COMP-' + String(index).padStart(2,'0');
+    assert.ok(scene.objects.some(object => object.componentId === id), id + ' must own real geometry');
+  }
+  const records = {};
+  for (let index = 1; index <= 13; index += 1) records['COMP-' + String(index).padStart(2,'0')] = 100;
+  scene.applyProgress(records,3,false);
+  scene.visibleBatches(5.1,false,0,null,{});
+  const visible = [...new Set(scene.currentObjects.map(item => item.object.componentId).filter(Boolean))].sort();
+  assert.deepEqual(visible,['COMP-01','COMP-02','COMP-03']);
 });
 test('notification forecast uses stable IDs for both old and new foundation snapshots', () => {
   const source = fs.readFileSync(path.join(root,'cloudfunctions/notification-center/index.js'),'utf8');
@@ -175,4 +169,3 @@ test('notification forecast uses stable IDs for both old and new foundation snap
     assert.equal(alerts[0].key,'ratio-dispatch:stage-03:stage-04');
   }
 });
-

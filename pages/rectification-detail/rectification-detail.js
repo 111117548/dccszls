@@ -305,15 +305,37 @@ Page({
       payload.recordId = current.feishuRecordId;
       payload.source = current.feishuSource || null;
       payload.project = app.getFeishuProjectContext();
+      payload.locator = {
+        title: current.taskTitle || current.title || '',
+        description: current.taskDescription || current.qualityIssue || current.description || '',
+        location: current.taskPositionText || current.positionCode || current.location || '',
+        category: current.category || '',
+        level: current.taskSeverityName || current.level || ''
+      };
     }
     this.setData({ feishuRefreshing: true, feishuEvidenceError: '', problemPhotoErrors: {} });
     var request = feishu.getTaskEvidence(payload).then(function (result) {
       if (self._disposed || self.data.orderId !== orderId || self.data.projectId !== projectId) return current;
-      if (result.task.recordId !== current.feishuRecordId) throw new Error('飞书任务编号不一致，请重新打开任务');
+      var relinked = result.task.recordId !== current.feishuRecordId && result.relinkedFromRecordId === current.feishuRecordId;
+      if (result.task.recordId !== current.feishuRecordId && !relinked) throw new Error('飞书任务编号不一致，请重新打开任务');
       // Refresh this detail only: no full-table sync, status transition or write-back.
-      var updated = Object.assign({}, self.data.order, { _feishuEvidence: result.task });
+      var updated = Object.assign({}, self.data.order, {
+        feishuRecordId: result.task.recordId,
+        feishuSource: result.source || current.feishuSource || null,
+        _feishuEvidence: result.task
+      });
+      if (relinked) {
+        var local = app.mergeRectificationOrder({
+          id: self.data.orderId,
+          feishuRecordId: result.task.recordId,
+          feishuSource: updated.feishuSource,
+          feishuRelinkedAt: new Date().toLocaleString('zh-CN')
+        });
+        if (local && app._syncOpenRectificationOrder) app._syncOpenRectificationOrder(local).catch(function () {});
+      }
       self._applyOrder(updated);
       self.setData({ feishuRefreshing: false, feishuEvidenceError: result.warning || '' });
+      if (relinked && !silent) wx.showToast({ title: '已恢复飞书关联', icon: 'success' });
       return updated;
     }).catch(function (error) {
       if (self._disposed || self.data.orderId !== orderId || self.data.projectId !== projectId) return current;

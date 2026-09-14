@@ -77,5 +77,9 @@ Page({
 
   openStage: function (event) {
     wx.navigateTo({ url: '/pages/construction-progress/construction-progress?stageIndex=' + Number(event.currentTarget.dataset.index || 1) + '&source=arrival-ledger' });
+  },
+
+  openFeatureGuide: function () {
+    wx.navigateTo({ url: '/pages/feature-guide/feature-guide?feature=progress' });
   }
 });

@@ -3,6 +3,9 @@
     <image class="brand-logo" src="/images/brand/zijin-longking-horizontal.png" mode="aspectFit" aria-label="紫金龙净"></image>
     <view class="brand-meta"><text>工程质量数字化平台</text><label>ENGINEERING QUALITY</label></view>
   </view>
+  <view class="feature-guide-entry" bindtap="openFeatureGuide" hover-class="ux-press" role="button">
+    <view class="feature-guide-icon">?</view><view class="feature-guide-copy"><text>智能检测使用说明</text><label>拍照、位置选择、智能分析与人工确认</label></view><text class="feature-guide-arrow">›</text>
+  </view>
   <block wx:if="{{activeTab === 'photo'}}">
     <block wx:if="{{!tempFilePath && !aiLoading && !aiResult}}">
       <view class="smart-overview-card">

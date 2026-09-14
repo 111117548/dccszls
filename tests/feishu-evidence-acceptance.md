@@ -3,7 +3,7 @@
 ## 部署
 
 1. 在微信开发者工具中，对 `cloudfunctions/feishu-rectification` 执行“上传并部署：云端安装依赖”。必须包含新增的 `evidence.js`。
-2. 保留现有云函数环境变量和表格权限。客户端和云函数版本标记均为 `feishu-user-visible-projects-v14-evidence-source`。
+2. 保留现有云函数环境变量和表格权限。客户端和云函数版本标记均为 `feishu-user-visible-projects-v15-evidence-relink`。
 3. 重新编译并预览小程序。进入质量检查台账同步任务，再打开一条整改任务，点击“刷新飞书”。
 4. 正式版需重新上传、审核和发布小程序；仅部署云函数不会更新已发布页面。
 

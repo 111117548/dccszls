@@ -2002,6 +2002,10 @@ Page({
     app.globalData.checkStates[noteKey] = e.detail.value;
   },
 
+  openFeatureGuide: function () {
+    wx.navigateTo({ url: '/pages/feature-guide/feature-guide?feature=smartInspection' });
+  },
+
   resetChecklist: function () {
     var self = this;
     wx.showModal({

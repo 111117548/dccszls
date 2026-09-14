@@ -8,8 +8,7 @@ Page({
     deviceName: '',
     stageIndex: 1,
     tools: [
-      { action: 'arrival', name: '到货管理', caption: '清单与预警', icon: '/assets/icon-review-v1/12-crane-lifting.svg' },
-      { action: 'progress', name: '安装进度', caption: '现场进度', icon: '/assets/icon-review-v1/10-construction-helmet.svg' },
+      { action: 'progress', name: '到货与安装', caption: '到货登记、安装进度与预警', icon: '/assets/icon-review-v1/10-construction-helmet.svg' },
       { action: 'smartInspection', name: '智能检测', caption: '拍照识别与缺陷确认', icon: '/assets/icon-review-v1/09-engineering-inspection.svg' },
       { action: 'qualityLedger', name: '质量检查台账', caption: '整改任务与复验闭环', icon: '/assets/icon-review-v1/07-rapping-system.svg' },
       { action: 'records', name: '检验记录', caption: '填写与归档', icon: '/assets/icon-review-v1/05-collecting-plate.svg' },
@@ -32,7 +31,6 @@ Page({
   openTool: function (event) {
     var action = event.currentTarget.dataset.action;
     var routes = {
-      arrival: '/pages/arrival-srm/arrival-srm',
       progress: '/pages/construction-progress/construction-progress?stageIndex=' + this.data.stageIndex + '&source=workbench',
       smartInspection: '/pages/inspect/inspect',
       qualityLedger: '/pages/history/history?tab=rectification',
