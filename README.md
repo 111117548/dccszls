@@ -1,5 +1,5 @@
-# 一款ESP施工过程的孪生管理平台（关于工程设备安装过程都可以作为参照）
-
+# 一款工程设备施工过程的数字孪生管理平台（关于工程设备类安装过程管理都可以参照此小程序来做企业落地）
+> 我觉得做企业的FDM落地，一定要先把很多线下的工作先做到线上来，再想办法用AI进行提效以及后续的自动化。
 > 面向火电厂电除尘器建设期的微信小程序，将施工进度可视化、AI质量检查、整改复验、工程台账与协作通知连接成一条现场闭环。
 
 [![WeChat Mini Program](https://img.shields.io/badge/WeChat-Mini%20Program-07C160)](https://developers.weixin.qq.com/miniprogram/dev/framework/)
